@@ -131,8 +131,8 @@ export function Sidebar({ className }: SidebarProps) {
               />
             </div>
             {!isCollapsed && (
-              <div className="animate-fade-in">
-                <h1 className="text-lg font-bold text-foreground gradient-text">Portal UNK</h1>
+              <div className="animate-fade-in ml-3">
+                <h1 className="text-lg font-bold gradient-text text-[rgba(136,37,239,0.58)]">Portal UNK</h1>
                 <p className="text-xs text-muted-foreground">Assessoria Musical</p>
               </div>
             )}
@@ -150,18 +150,14 @@ export function Sidebar({ className }: SidebarProps) {
 
       {/* User Info */}
       {!isCollapsed && (
-        <div className="p-4 border-b border-border/50 backdrop-blur-xl animate-fade-in">
+        <div className="p-4 border-b border-border/50 backdrop-blur-xl animate-fade-in -ml-11">
           <div className="flex items-center space-x-3 hover-lift cursor-pointer">
-            <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center shadow-glow animate-pulse">
-              <span className="text-sm font-medium text-white">
-                {user?.username?.[0]?.toUpperCase() || 'U'}
-              </span>
-            </div>
+            <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center shadow-glow animate-pulse" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
+              <p className="text-sm font-medium truncate text-[#FFE6F4]">
                 {user?.username}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-[rgba(193,80,253,1)]">
                 {user?.role === 'admin' ? 'Administrador' : 'Produtor'}
               </p>
             </div>
@@ -182,7 +178,7 @@ export function Sidebar({ className }: SidebarProps) {
                 onClick={() => setIsMobileMenuOpen(false)}
                 style={{
                   animationDelay: `${index * 50}ms`,
-                  ...(item.href === '/finances' ? { backgroundColor: 'rgba(83, 15, 181, 1)' } : {}),
+                  ...(item.href === '/finances' ? { backgroundColor: 'rgba(83, 15, 181, 0)' } : {}),
                 }}
                 className={cn(
                   "w-full justify-start text-left font-normal transition-all duration-300",

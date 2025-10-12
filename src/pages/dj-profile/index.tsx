@@ -1482,6 +1482,12 @@ const DJsProfile = () => {
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
+                <Label htmlFor="birth_date">Data de Nascimento</Label>
+                <Input id="birth_date" name="birth_date" type="date" defaultValue={formatDateForInput(dj.birth_date)} />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
                 <Label htmlFor="whatsapp">WhatsApp</Label>
                 <Input id="whatsapp" name="whatsapp" defaultValue={dj.whatsapp ?? ""} />
               </div>

@@ -334,8 +334,8 @@ const DJsPage = () => {
                     <Input id="email" name="email" type="email" defaultValue={selectedDJ?.email ?? ""} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Telefone</Label>
-                    <Input id="phone" name="phone" defaultValue={selectedDJ?.phone ?? ""} />
+                    <Label htmlFor="cpf">CPF</Label>
+                    <Input id="cpf" name="cpf" defaultValue={selectedDJ?.cpf ?? ""} />
                   </div>
                 </div>
 

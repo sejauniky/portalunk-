@@ -463,6 +463,20 @@ const CompanySettings = () => {
     setEditing(false);
   };
 
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      const isSaveCombo = (e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S');
+      if (isSaveCombo) {
+        e.preventDefault();
+        if (editing && !loading) {
+          handleSave();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [editing, loading, formData]);
+
   return (
     <div className="p-8">
       <div className="mb-8">

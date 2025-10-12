@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Calendário de Eventos</title>
+  <link rel="stylesheet" href="/styles/events.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Calendário de Eventos</h1>
+    <button class="btn-new">+ Novo Evento</button>
+  </header>
+
+  <main class="container">
+    <section class="stats-grid">
+      <div class="card stat">
+        <div class="label">Total de Eventos</div>
+        <div class="value" id="total-events">0</div>
+        <div class="sub">Eventos cadastrados</div>
+      </div>
+      <div class="card stat">
+        <div class="label">Hoje</div>
+        <div class="value" id="events-today">0</div>
+        <div class="sub">Eventos hoje</div>
+      </div>
+      <div class="card stat">
+        <div class="label">Próximos 7 dias</div>
+        <div class="value" id="events-week">0</div>
+        <div class="sub">Eventos próximos</div>
+      </div>
+      <div class="card stat">
+        <div class="label">Confirmados</div>
+        <div class="value" id="events-confirmed">0</div>
+        <div class="sub">Eventos confirmados</div>
+      </div>
+    </section>
+
+    <section class="controls">
+      <div class="search">
+        <input id="search-input" placeholder="Buscar eventos, DJs, locais..." />
+      </div>
+      <div class="filters">
+        <select id="status-filter">
+          <option value="">Todos os status</option>
+          <option value="confirmed">Confirmados</option>
+          <option value="pending">Pendentes</option>
+        </select>
+        <div class="view-buttons">
+          <button class="btn small">Mês</button>
+          <button class="btn small">Semana</button>
+          <button class="btn small active">Lista</button>
+        </div>
+        <button id="clear-filters" class="btn ghost">Limpar Filtros</button>
+      </div>
+    </section>
+
+    <section id="events-list" class="events-list">
+      <!--Eventos renderizados aqui-->
+    </section>
+  </main>
+
+  <script src="/config.js" defer></script> <!-- crie copiando config.example.js -->
+  <script src="/js/events.js" defer></script>
+
+  <script>
+    // registra service worker (se existir)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(()=>{/*fail silently*/});
+    }
+  </script>
+</body>
+</html>

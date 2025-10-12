@@ -235,7 +235,7 @@ const Login = () => {
                 <p className="text-[10px] uppercase tracking-[0.55em] text-white/40">Profissional</p>
               </div>
 
-              <div className="mt-0.5 flex h-24 items-end justify-center gap-[6px] rounded-2xl bg-gradient-to-r from-purple-500/40 via-blue-500/40 to-cyan-400/40 px-4 pb-4 pt-6">
+              <div className="mt-0.5 flex h-24 items-end justify-center gap-[6px] rounded-2xl px-4 pb-4 pt-6" style={{ backgroundColor: 'rgba(30, 22, 54, 0.8)' }}>
                 {animatedBars.map((height, index) => (
                   <span
                     key={index}

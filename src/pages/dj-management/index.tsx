@@ -31,6 +31,7 @@ interface DJ {
   youtube_url?: string | null;
   tiktok_url?: string | null;
   soundcloud_url?: string | null;
+  birth_date?: string | null;
   is_active?: boolean | null;
 }
 
@@ -47,6 +48,7 @@ type DJFormValues = Omit<Pick<
   | "youtube_url"
   | "tiktok_url"
   | "soundcloud_url"
+  | "birth_date"
   | "status"
   | "is_active"
 >, never>;
@@ -75,6 +77,13 @@ const formatCurrency = (value?: number | null) => {
     console.error("Failed to format currency:", error);
     return null;
   }
+};
+
+const formatDateForInput = (value?: string | null) => {
+  if (!value) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
 };
 
 const DJsPage = () => {
@@ -215,6 +224,8 @@ const DJsPage = () => {
       return Number.isFinite(numeric) ? numeric : null;
     };
 
+    const birthRaw = formData.get("birth_date")?.toString().trim() || "";
+
     const payload: DJFormValues = {
       artist_name: (formData.get("artist_name")?.toString() ?? "").trim(),
       real_name: formData.get("real_name")?.toString().trim() || null,
@@ -229,6 +240,7 @@ const DJsPage = () => {
       )?.toString().trim() || null,
       tiktok_url: formData.get("tiktok_url")?.toString().trim() || null,
       soundcloud_url: formData.get("soundcloud_url")?.toString().trim() || null,
+      birth_date: birthRaw ? birthRaw : null,
       status: selectedDJ?.status ?? "Ativo",
       is_active: selectedDJ?.is_active ?? true,
     };
@@ -324,6 +336,13 @@ const DJsPage = () => {
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone</Label>
                     <Input id="phone" name="phone" defaultValue={selectedDJ?.phone ?? ""} />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="birth_date">Data de Nascimento</Label>
+                    <Input id="birth_date" name="birth_date" type="date" defaultValue={formatDateForInput(selectedDJ?.birth_date ?? null)} />
                   </div>
                 </div>
 

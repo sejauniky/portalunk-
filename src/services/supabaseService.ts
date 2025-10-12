@@ -878,9 +878,24 @@ export const eventService = {
         if (!error) {
           updateEventColumnCache(allowedColumns);
           if (data?.id) {
-            await syncEventDjRelations(String(data.id), mergedDjIds, feeMap);
-            await ensurePendingPaymentForEvent(data as EventRow, sanitizedRecord as Partial<EventRow>);
-            await syncDjProducerRelationStats(data as EventRow, sanitizedRecord as Partial<EventRow>, mergedDjIds, feeMap);
+            // Sync relations and auxiliary data, but do not fail the main create if these supplementary steps error
+            try {
+              await syncEventDjRelations(String(data.id), mergedDjIds, feeMap);
+            } catch (relErr) {
+              console.error('Failed to sync event-dj relations:', formatError(relErr));
+            }
+
+            try {
+              await ensurePendingPaymentForEvent(data as EventRow, sanitizedRecord as Partial<EventRow>);
+            } catch (payErr) {
+              console.error('Failed to ensure pending payment for event:', formatError(payErr));
+            }
+
+            try {
+              await syncDjProducerRelationStats(data as EventRow, sanitizedRecord as Partial<EventRow>, mergedDjIds, feeMap);
+            } catch (statsErr) {
+              console.error('Failed to sync DJ-producer relation stats (non-fatal):', formatError(statsErr));
+            }
           }
           return { data: data as EnrichedEvent, error: null };
         }

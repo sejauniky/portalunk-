@@ -493,6 +493,7 @@ const DJsProfile = () => {
       youtube_url: toNullableString(formData.get("youtube_url")),
       tiktok_url: toNullableString(formData.get("tiktok_url")),
       soundcloud_url: toNullableString(formData.get("soundcloud_url")),
+      birth_date: toNullableString(formData.get("birth_date")),
     };
 
     updateDJMutation.mutate(payload);
@@ -1143,6 +1144,13 @@ const DJsProfile = () => {
 
                         <div className="grid gap-4 md:grid-cols-2">
                           <div className="space-y-2">
+                            <Label htmlFor="birth_date">Data de Nascimento</Label>
+                            <Input id="birth_date" name="birth_date" type="date" defaultValue={formatDateForInput(dj.birth_date)} />
+                          </div>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
                             <Label htmlFor="genre">Gênero Musical</Label>
                             <Input id="genre" name="genre" defaultValue={dj.genre ?? ""} />
                           </div>
@@ -1447,6 +1455,7 @@ const DJsProfile = () => {
                 tiktok_url: toNullable(formData.get("tiktok_url")),
                 soundcloud_url: toNullable(formData.get("soundcloud_url")),
                 portifolio_url: toNullable(formData.get("portifolio_url")),
+                birth_date: toNullable(formData.get("birth_date")),
               };
               updateDJMutation.mutate(payload, { onSuccess: () => setIsEditDialogOpen(false) });
             }}
@@ -1470,6 +1479,12 @@ const DJsProfile = () => {
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefone</Label>
                 <Input id="phone" name="phone" defaultValue={dj.phone ?? ""} />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="birth_date">Data de Nascimento</Label>
+                <Input id="birth_date" name="birth_date" type="date" defaultValue={formatDateForInput(dj.birth_date)} />
               </div>
             </div>
             <div className="grid gap-4 md:grid-cols-2">

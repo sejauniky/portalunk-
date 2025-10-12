@@ -458,10 +458,16 @@ const EventCalendar = () => {
         location: values.location,
         venue: values.location,
         city: values.city,
-        cache_value: typeof values.cache_value === 'string' ? parseFloat(values.cache_value) || 0 : values.cache_value || 0,
-        commission_rate: typeof values.commission_rate === 'string' ? parseFloat(values.commission_rate) || 20 : values.commission_rate || 20,
+        cache_value:
+          typeof values.cache_value === "string"
+            ? parseFloat(values.cache_value) || 0
+            : values.cache_value || 0,
+        commission_rate:
+          typeof values.commission_rate === "string"
+            ? parseFloat(values.commission_rate) || 20
+            : values.commission_rate || 20,
         status: values.status,
-        dj_id: values.dj_id,
+        dj_ids: Array.isArray(values.dj_ids) ? values.dj_ids : [],
         producer_id: values.producer_id,
       };
 

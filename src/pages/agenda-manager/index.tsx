@@ -807,6 +807,14 @@ const ContentPlannerSection = ({
                     onChange={(value: string) => onUpdate(item.id, { category: value as AgendaItem["category"] })}
                     triggerClassName="w-44"
                   />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    iconName="Trash2"
+                    onClick={() => { if (window.confirm('Excluir este item?')) onDelete(item.id); }}
+                  >
+                    Excluir
+                  </Button>
                 </div>
               </CardContent>
             </Card>

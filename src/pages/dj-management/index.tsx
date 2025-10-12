@@ -364,11 +364,6 @@ const DJsPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="bio">Biografia</Label>
-                  <Textarea id="bio" name="bio" rows={3} defaultValue={selectedDJ?.bio ?? ""} />
-                </div>
-
-                <div className="space-y-2">
                   <Label htmlFor="instagram_url">Instagram URL</Label>
                   <Input id="instagram_url" name="instagram_url" defaultValue={selectedDJ?.instagram_url ?? ""} />
                 </div>

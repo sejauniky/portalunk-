@@ -485,6 +485,7 @@ const FinancialTracking = () => {
                   variant={isActive ? "default" : "ghost"}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex-1 ${isActive ? 'glow-effect' : ''}`}
+                  style={isActive ? { backgroundColor: 'rgba(127, 63, 160, 0.55)', border: '1px solid rgba(77, 29, 98, 0.33)' } : undefined}
                 >
                   <IconComponent className="w-5 h-5 mr-2" />
                   {tab.label}

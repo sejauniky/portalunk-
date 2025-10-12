@@ -11,7 +11,6 @@ import { PWAInstallPrompt } from "@/components/ui/PWAInstallPrompt";
 
 // Pages
 import Login from "./pages/Login";
-import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
 // Admin Pages

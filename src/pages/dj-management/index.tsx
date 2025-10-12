@@ -21,7 +21,6 @@ interface DJ {
   artist_name: string;
   real_name?: string | null;
   email?: string | null;
-  phone?: string | null;
   avatar_url?: string | null;
   genre?: string | null;
   base_price?: number | null;
@@ -227,7 +226,6 @@ const DJsPage = () => {
       artist_name: (formData.get("artist_name")?.toString() ?? "").trim(),
       real_name: formData.get("real_name")?.toString().trim() || null,
       email: formData.get("email")?.toString().trim() || null,
-      phone: formData.get("phone")?.toString().trim() || null,
       genre: formData.get("genre")?.toString().trim() || null,
       base_price: parseBasePrice(),
       instagram_url: formData.get("instagram_url")?.toString().trim() || null,

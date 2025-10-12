@@ -196,7 +196,8 @@ const AdminDashboard = () => {
       icon: 'Calendar',
       color: 'primary',
       clickable: true,
-      onClick: () => setLocation('/agenda-manager')
+      onClick: () => setLocation('/agenda-manager'),
+      valueStyle: { fontSize: 17, fontWeight: 500, lineHeight: '32px' }
     }
   ];
 
@@ -361,11 +362,11 @@ const AdminDashboard = () => {
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <Icon name="Clock" size={16} />
-                  <span>{currentTime?.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                  <Icon name="Clock" size={16} style={{ color: 'rgba(209, 166, 39, 1)', textShadow: '1px 1px 3px rgba(221, 118, 28, 1)' }} />
+                  <span style={{ color: 'rgba(250, 161, 72, 1)' }}>{currentTime?.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 {user && (
-                  <div className="glass-surface mt-2 sm:mt-0 px-3 py-1 rounded-full text-xs sm:text-sm text-blue-300 whitespace-nowrap">
+                  <div className="glass-surface mt-2 sm:mt-0 px-3 py-1 rounded-full text-xs sm:text-sm text-blue-300 whitespace-nowrap" style={{ color: 'rgba(253, 178, 96, 0.8)' }}>
                     {user?.email}
                   </div>
                 )}
@@ -394,6 +395,7 @@ const AdminDashboard = () => {
                 color={metric?.color}
                 clickable={metric?.clickable}
                 onClick={metric?.onClick}
+                valueStyle={metric?.valueStyle}
               />
             ))}
         <div className="bg-card border border-border rounded-lg p-6">
@@ -402,22 +404,26 @@ const AdminDashboard = () => {
               <p className="text-sm font-medium text-muted-foreground">Status dos Eventos</p>
               <p className="text-2xl font-bold text-foreground">{eventStatusSummary.total}</p>
             </div>
-            <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-muted/20">
-              <Icon name="Activity" size={24} className="text-primary" />
-            </div>
+            <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-muted/20" />
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div>
               <p className="text-xs text-muted-foreground">Confirmados</p>
-              <p className="text-lg font-semibold text-success">{eventStatusSummary.confirmed}</p>
+              <p className="text-lg font-semibold text-success" style={{ color: 'rgba(14, 229, 143, 1)' }}>
+                {eventStatusSummary.confirmed}
+              </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Pendentes</p>
-              <p className="text-lg font-semibold text-warning">{eventStatusSummary.pending}</p>
+              <p className="text-lg font-semibold text-warning" style={{ color: 'rgba(221, 245, 11, 1)' }}>
+                {eventStatusSummary.pending}
+              </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Concluídos</p>
-              <p className="text-lg font-semibold text-secondary">{eventStatusSummary.completed}</p>
+              <p className="text-lg font-semibold text-secondary" style={{ color: 'rgba(14, 100, 187, 1)' }}>
+                {eventStatusSummary.completed}
+              </p>
             </div>
           </div>
           <div className="mt-4 h-2 w-full bg-muted rounded-full overflow-hidden">
@@ -451,7 +457,7 @@ const AdminDashboard = () => {
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-muted/20">
-                  <Icon name="MapPin" size={20} className="text-primary" />
+                  <Icon name="MapPin" size={20} className="text-primary" style={{ color: 'rgba(24, 76, 229, 1)' }} />
                 </div>
               </div>
               <div className="space-y-4">

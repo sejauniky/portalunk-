@@ -1190,10 +1190,11 @@ const AgendaManager = () => {
         </TabsList>
 
         <TabsContent value="personal" className="mt-6">
-          <PersonalAgendaSection 
+          <PersonalAgendaSection
             items={personalItems.filter(item => item.category === "personal")}
             onCreate={(payload) => createItem(payload)}
             onUpdateStatus={updatePersonalStatus}
+            onDelete={deleteItem}
           />
         </TabsContent>
 

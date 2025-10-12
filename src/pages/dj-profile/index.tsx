@@ -493,6 +493,7 @@ const DJsProfile = () => {
       youtube_url: toNullableString(formData.get("youtube_url")),
       tiktok_url: toNullableString(formData.get("tiktok_url")),
       soundcloud_url: toNullableString(formData.get("soundcloud_url")),
+      birth_date: toNullableString(formData.get("birth_date")),
     };
 
     updateDJMutation.mutate(payload);

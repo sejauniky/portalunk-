@@ -102,7 +102,6 @@ type DJUpdatePayload = {
   real_name?: string | null;
   email?: string | null;
   phone?: string | null;
-  bio?: string | null;
   genre?: string | null;
   base_price?: number | null;
   instagram_url?: string | null;
@@ -486,7 +485,6 @@ const DJsProfile = () => {
       real_name: toNullableString(formData.get("real_name")),
       email: toNullableString(formData.get("email")),
       phone: toNullableString(formData.get("phone")),
-      bio: toNullableString(formData.get("bio")),
       genre: toNullableString(formData.get("genre")),
       base_price: Number.isFinite(basePriceValue) ? basePriceValue : null,
       instagram_url: toNullableString(formData.get("instagram_url")),
@@ -1447,7 +1445,6 @@ const DJsProfile = () => {
                 whatsapp: toNullable(formData.get("whatsapp")),
                 location: toNullable(formData.get("location")),
                 pix_key: toNullable(formData.get("pix_key")),
-                bio: toNullable(formData.get("bio")),
                 genre: toNullable(formData.get("genre")),
                 base_price: Number.isFinite(basePriceVal) ? basePriceVal : null,
                 instagram_url: toNullable(formData.get("instagram_url")),

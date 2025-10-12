@@ -385,7 +385,9 @@ const PersonalAgendaSection = ({
             })}
           </div>
           <div className="mt-4">
-            <Button onClick={() => setDialogOpen(true)} className="w-full">Novo Compromisso</Button>
+            <Button onClick={() => setDialogOpen(true)} className="w-full" style={{ backgroundColor: 'rgba(158, 60, 251, 0.37)' }}>
+              Novo Compromisso
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -439,6 +441,7 @@ const PersonalAgendaSection = ({
                       size="sm"
                       variant={item.status === status.value ? "default" : "ghost"}
                       className="h-8 text-xs"
+                      style={item.status === status.value ? { backgroundColor: 'rgba(118, 31, 255, 0.49)' } : undefined}
                       onClick={() => onUpdateStatus(item.id, status.value as AgendaItem["status"])}
                     >
                       {status.label}
@@ -449,6 +452,7 @@ const PersonalAgendaSection = ({
                     variant="destructive"
                     className="h-8 text-xs"
                     iconName="Trash2"
+                    style={{ backgroundColor: 'rgba(255, 0, 0, 0.24)' }}
                     onClick={() => { if (window.confirm('Excluir este compromisso?')) onDelete(item.id); }}
                   >
                     Excluir

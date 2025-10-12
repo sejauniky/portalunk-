@@ -538,20 +538,10 @@ export const eventService = {
           *,
           dj:djs!events_dj_id_fkey (
             id,
-            name,
             artist_name,
+            name,
+            stage_name,
             email
-          ),
-          event_djs:event_djs (
-            id,
-            dj_id,
-            fee,
-            dj:djs!event_djs_dj_id_fkey (
-              id,
-              name,
-              artist_name,
-              email
-            )
           ),
           producer:producers!events_producer_id_fkey (
             id,
@@ -559,6 +549,19 @@ export const eventService = {
             company_name,
             email,
             profile_id
+          ),
+          event_djs:event_djs (
+            id,
+            dj_id,
+            fee,
+            dj:djs!event_djs_dj_id_fkey (
+              id,
+              artist_name,
+              name,
+              stage_name,
+              email,
+              genre
+            )
           )
         `)
         .order('event_date', { ascending: false });

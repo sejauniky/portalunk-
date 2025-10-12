@@ -556,12 +556,14 @@ const ContentPlannerSection = ({
   settings,
   onCreate,
   onUpdate,
+  onDelete,
   djs,
 }: {
   items: AgendaItem[];
   settings: KanbanSettingsType;
   onCreate: (payload: Omit<AgendaItem, "id">) => void;
   onUpdate: (id: string, data: Partial<AgendaItem>) => void;
+  onDelete: (id: string) => void;
   djs: any[];
 }) => {
   const { toast } = useToast();

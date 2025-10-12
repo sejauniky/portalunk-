@@ -234,10 +234,12 @@ const PersonalAgendaSection = ({
   items,
   onCreate,
   onUpdateStatus,
+  onDelete,
 }: {
   items: AgendaItem[];
   onCreate: (payload: Omit<AgendaItem, "id">) => void;
   onUpdateStatus: (id: string, status: AgendaItem["status"]) => void;
+  onDelete: (id: string) => void;
 }) => {
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -383,7 +385,9 @@ const PersonalAgendaSection = ({
             })}
           </div>
           <div className="mt-4">
-            <Button onClick={() => setDialogOpen(true)} className="w-full">Novo Compromisso</Button>
+            <Button onClick={() => setDialogOpen(true)} className="w-full" style={{ backgroundColor: 'rgba(158, 60, 251, 0.37)' }}>
+              Novo Compromisso
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -437,11 +441,22 @@ const PersonalAgendaSection = ({
                       size="sm"
                       variant={item.status === status.value ? "default" : "ghost"}
                       className="h-8 text-xs"
+                      style={item.status === status.value ? { backgroundColor: 'rgba(118, 31, 255, 0.49)' } : undefined}
                       onClick={() => onUpdateStatus(item.id, status.value as AgendaItem["status"])}
                     >
                       {status.label}
                     </Button>
                   ))}
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="h-8 text-xs"
+                    iconName="Trash2"
+                    style={{ backgroundColor: 'rgba(255, 0, 0, 0.24)' }}
+                    onClick={() => { if (window.confirm('Excluir este compromisso?')) onDelete(item.id); }}
+                  >
+                    Excluir
+                  </Button>
                 </div>
               </div>
             ))}
@@ -545,12 +560,14 @@ const ContentPlannerSection = ({
   settings,
   onCreate,
   onUpdate,
+  onDelete,
   djs,
 }: {
   items: AgendaItem[];
   settings: KanbanSettingsType;
   onCreate: (payload: Omit<AgendaItem, "id">) => void;
   onUpdate: (id: string, data: Partial<AgendaItem>) => void;
+  onDelete: (id: string) => void;
   djs: any[];
 }) => {
   const { toast } = useToast();
@@ -729,6 +746,15 @@ const ContentPlannerSection = ({
                             {status.label}
                           </Button>
                         ))}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs text-destructive"
+                          iconName="Trash2"
+                          onClick={() => { if (window.confirm('Excluir este item?')) onDelete(item.id); }}
+                        >
+                          Excluir
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -785,6 +811,14 @@ const ContentPlannerSection = ({
                     onChange={(value: string) => onUpdate(item.id, { category: value as AgendaItem["category"] })}
                     triggerClassName="w-44"
                   />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    iconName="Trash2"
+                    onClick={() => { if (window.confirm('Excluir este item?')) onDelete(item.id); }}
+                  >
+                    Excluir
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -1113,6 +1147,12 @@ const AgendaManager = () => {
     toast({ title: "Item de Conteúdo atualizado" });
   }, [setContentItems, toast]);
 
+  const deleteItem = useCallback((id: string) => {
+    setPersonalItems((prev) => prev.filter((item) => item.id !== id));
+    setContentItems((prev) => prev.filter((item) => item.id !== id));
+    toast({ title: "Item excluído" });
+  }, [setPersonalItems, setContentItems, toast]);
+
   // Função para mudar o agrupamento do Kanban
   const changeKanbanGroupBy = (groupBy: KanbanGroupBy) => {
     setKanbanSettings(prev => ({ ...prev, groupBy }));
@@ -1154,10 +1194,11 @@ const AgendaManager = () => {
         </TabsList>
 
         <TabsContent value="personal" className="mt-6">
-          <PersonalAgendaSection 
+          <PersonalAgendaSection
             items={personalItems.filter(item => item.category === "personal")}
             onCreate={(payload) => createItem(payload)}
             onUpdateStatus={updatePersonalStatus}
+            onDelete={deleteItem}
           />
         </TabsContent>
 
@@ -1183,6 +1224,7 @@ const AgendaManager = () => {
                 settings={kanbanSettings}
                 onCreate={(payload) => createItem(payload)}
                 onUpdate={updateContentItem}
+                onDelete={deleteItem}
                 djs={djs}
               />
             </div>

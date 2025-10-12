@@ -156,8 +156,8 @@ const CompanySettings = () => {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Avatar da Empresa</label>
-          <div className="flex items-center gap-4">
+          <label className="block text-sm font-medium text-foreground mb-2">Imagem Perfil</label>
+          <div className="flex items-center gap-4 -ml-[17px] w-[439.2px] h-[90px]">
             <div className="w-20 h-20 rounded-full overflow-hidden border border-border bg-muted flex items-center justify-center">
               {(formData.avatar_url_preview || formData.avatar_url) ? (
                 <img src={formData.avatar_url_preview || formData.avatar_url} alt="Avatar" className="w-full h-full object-cover object-center" />
@@ -178,7 +178,7 @@ const CompanySettings = () => {
                 }}
                 className="text-sm text-muted-foreground"
               />
-              <p className="text-xs text-muted-foreground">Use uma imagem quadrada para melhores resultados</p>
+              <p className="text-xs text-muted-foreground"><span>upload de imagem do perfil</span></p>
             </div>
           </div>
         </div>
@@ -463,6 +463,20 @@ const CompanySettings = () => {
     setEditing(false);
   };
 
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      const isSaveCombo = (e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S');
+      if (isSaveCombo) {
+        e.preventDefault();
+        if (editing && !loading) {
+          handleSave();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [editing, loading, formData]);
+
   return (
     <div className="p-8">
       <div className="mb-8">
@@ -529,7 +543,7 @@ const CompanySettings = () => {
             ) : (
               <>
                 <Button onClick={handleCancelEdit} variant="outline" size="lg">Cancelar</Button>
-                <Button onClick={handleSave} loading={loading} iconName="Save" iconPosition="left" size="lg">Salvar Dados</Button>
+                <Button onClick={handleSave} aria-label="Salvar alterações" loading={loading} iconName="Save" iconPosition="left" size="lg">Salvar Alterações</Button>
               </>
             )}
           </div>

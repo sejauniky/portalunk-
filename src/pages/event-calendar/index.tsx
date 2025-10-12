@@ -514,7 +514,7 @@ const EventCalendar = () => {
           try {
             // 1. Limpar relações anteriores (importante para edição)
             const { error: deleteError } = await supabase
-              .from('events_djs')
+              .from('event_djs')
               .delete()
               .eq('event_id', eventId);
 
@@ -532,7 +532,7 @@ const EventCalendar = () => {
             }));
 
             const { error: insertError } = await supabase
-              .from('events_djs')
+              .from('event_djs')
               .insert(eventsDjsRecords);
 
             if (insertError) {

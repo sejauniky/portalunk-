@@ -1143,6 +1143,13 @@ const DJsProfile = () => {
 
                         <div className="grid gap-4 md:grid-cols-2">
                           <div className="space-y-2">
+                            <Label htmlFor="birth_date">Data de Nascimento</Label>
+                            <Input id="birth_date" name="birth_date" type="date" defaultValue={formatDateForInput(dj.birth_date)} />
+                          </div>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
                             <Label htmlFor="genre">Gênero Musical</Label>
                             <Input id="genre" name="genre" defaultValue={dj.genre ?? ""} />
                           </div>

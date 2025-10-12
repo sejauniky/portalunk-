@@ -107,16 +107,29 @@ function DjAgenda({ dj }) {
 
   // Agrupar eventos por dia
   const eventsByDay = useMemo(() => {
-    const grouped = new Map();
-    events.forEach(event => {
-      if (!event.event_date) return;
-      const eventDate = new Date(event.event_date);
-      const dateKey = format(eventDate, 'yyyy-MM-dd');
-      if (!grouped.has(dateKey)) {
-        grouped.set(dateKey, []);
+    const grouped = new Map<string, any[]>();
+
+    const parseLocalDate = (value: string) => {
+      if (!value) return null as Date | null;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        const [y, m, d] = value.split('-').map((v) => Number(v));
+        const local = new Date(y, m - 1, d);
+        return Number.isNaN(local.getTime()) ? null : local;
       }
-      grouped.get(dateKey).push(event);
+      const dt = new Date(value);
+      return Number.isNaN(dt.getTime()) ? null : dt;
+    };
+
+    (events || []).forEach((event: any) => {
+      const raw = event?.event_date as string | null | undefined;
+      if (!raw) return;
+      const eventDate = parseLocalDate(raw);
+      if (!eventDate) return;
+      const dateKey = format(eventDate, 'yyyy-MM-dd');
+      if (!grouped.has(dateKey)) grouped.set(dateKey, []);
+      grouped.get(dateKey)!.push(event);
     });
+
     return grouped;
   }, [events]);
 

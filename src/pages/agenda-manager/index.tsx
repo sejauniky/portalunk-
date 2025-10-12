@@ -1220,6 +1220,7 @@ const AgendaManager = () => {
                 settings={kanbanSettings}
                 onCreate={(payload) => createItem(payload)}
                 onUpdate={updateContentItem}
+                onDelete={deleteItem}
                 djs={djs}
               />
             </div>

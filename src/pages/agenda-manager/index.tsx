@@ -742,6 +742,15 @@ const ContentPlannerSection = ({
                             {status.label}
                           </Button>
                         ))}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs text-destructive"
+                          iconName="Trash2"
+                          onClick={() => { if (window.confirm('Excluir este item?')) onDelete(item.id); }}
+                        >
+                          Excluir
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>

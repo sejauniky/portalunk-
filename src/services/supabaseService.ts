@@ -232,6 +232,12 @@ const ensurePendingPaymentForEvent = async (
   const parsedAmount = parseNumericValue(amountSource);
   const amount = parsedAmount != null && parsedAmount >= 0 ? roundCurrencyValue(parsedAmount) : 0;
 
+  // Skip creating payment if amount is zero or cache is exempt
+  const isExempt = Boolean((eventRecord as any)?.cache_exempt) || Boolean((fallbackRecord as any)?.cache_exempt);
+  if (isExempt || amount <= 0) {
+    return;
+  }
+
   const rawProducerId = eventRecord?.producer_id ?? fallbackRecord?.producer_id ?? null;
   const producerId = rawProducerId ? String(rawProducerId) : null;
 
@@ -285,17 +291,6 @@ const ensurePendingPaymentForEvent = async (
     const msg = formatError(insertError);
     if (isNetworkError(msg)) throw new AppError('Erro de rede ao criar pagamento', ErrorKind.Network, insertError);
     throw new AppError('Erro ao criar pagamento', ErrorKind.Database, insertError);
-  }
-
-  const { error: insertPaymentError } = await supabase.from('payments').insert([insertPayload as {
-    amount: number;
-    event_id?: string;
-    status?: 'pendente' | 'processado' | 'atrasado' | 'pago';
-    producer_id?: string | null;
-    due_date?: string | null;
-  }]);
-  if (insertPaymentError) {
-    throw insertPaymentError;
   }
 };
 

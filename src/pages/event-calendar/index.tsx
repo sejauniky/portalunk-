@@ -461,6 +461,14 @@ const EventCalendar = () => {
     async (values: EventFormValues) => {
       setEventFormSubmitting(true);
 
+      const isExempt = Boolean((values as any).cache_exempt);
+      const parsedCache = typeof values.cache_value === 'string'
+        ? parseFloat(values.cache_value) || 0
+        : values.cache_value || 0;
+      const parsedCommission = typeof values.commission_rate === 'string'
+        ? parseFloat(values.commission_rate) || 20
+        : values.commission_rate || 20;
+
       // Prepara o payload básico do evento
       const payload = {
         event_name: values.title,
@@ -470,17 +478,14 @@ const EventCalendar = () => {
         location: values.location,
         venue: values.location,
         city: values.city,
-        cache_value: typeof values.cache_value === 'string'
-          ? parseFloat(values.cache_value) || 0
-          : values.cache_value || 0,
-        commission_rate: typeof values.commission_rate === 'string'
-          ? parseFloat(values.commission_rate) || 20
-          : values.commission_rate || 20,
+        cache_value: isExempt ? 0 : parsedCache,
+        commission_rate: isExempt ? 0 : parsedCommission,
         status: values.status,
         // Mantém o primeiro DJ no campo dj_id para compatibilidade
         dj_id: values.dj_ids && values.dj_ids.length > 0 ? values.dj_ids[0] : null,
         producer_id: values.producer_id,
         contract_type: values.contract_type || 'basic',
+        cache_exempt: isExempt,
       };
 
       try {

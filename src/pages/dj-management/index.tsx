@@ -23,7 +23,6 @@ interface DJ {
   email?: string | null;
   phone?: string | null;
   avatar_url?: string | null;
-  bio?: string | null;
   genre?: string | null;
   base_price?: number | null;
   status?: string | null;
@@ -40,8 +39,6 @@ type DJFormValues = Omit<Pick<
   | "artist_name"
   | "real_name"
   | "email"
-  | "phone"
-  | "bio"
   | "genre"
   | "base_price"
   | "instagram_url"
@@ -231,7 +228,6 @@ const DJsPage = () => {
       real_name: formData.get("real_name")?.toString().trim() || null,
       email: formData.get("email")?.toString().trim() || null,
       phone: formData.get("phone")?.toString().trim() || null,
-      bio: formData.get("bio")?.toString().trim() || null,
       genre: formData.get("genre")?.toString().trim() || null,
       base_price: parseBasePrice(),
       instagram_url: formData.get("instagram_url")?.toString().trim() || null,

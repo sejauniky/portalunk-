@@ -529,7 +529,7 @@ const CompanySettings = () => {
             ) : (
               <>
                 <Button onClick={handleCancelEdit} variant="outline" size="lg">Cancelar</Button>
-                <Button onClick={handleSave} loading={loading} iconName="Save" iconPosition="left" size="lg">Salvar Dados</Button>
+                <Button onClick={handleSave} aria-label="Salvar alterações" loading={loading} iconName="Save" iconPosition="left" size="lg">Salvar Alterações</Button>
               </>
             )}
           </div>

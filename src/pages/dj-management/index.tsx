@@ -441,8 +441,6 @@ const DJsPage = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {dj.bio && <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">{dj.bio}</p>}
-
                   <div className="mb-4 flex items-center space-x-2">
                     {dj.instagram_url && <Instagram className="h-4 w-4 text-pink-500" />}
                     {dj.youtube_url && <Youtube className="h-4 w-4 text-red-500" />}

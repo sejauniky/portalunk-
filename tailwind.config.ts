@@ -111,7 +111,7 @@ export default {
   },
   plugins: [
     require("tailwindcss-animate"),
-    function({ addComponents }) {
+    function({ addComponents }: { addComponents: (components: Record<string, any>) => void }) {
       addComponents({
         '.glass-card': {
           backgroundColor: 'hsl(var(--glass-bg))',

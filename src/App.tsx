@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin-dashboard";
+import Index from "./pages/index";
 import DJManagement from "./pages/dj-management";
 import ProducerManagement from "./pages/producer-management";
 import EventCalendar from "./pages/event-calendar";

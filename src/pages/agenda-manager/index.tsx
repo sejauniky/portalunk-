@@ -21,7 +21,7 @@ import {
   Plus,
   Music,
 } from "lucide-react";
-import Input from "@/components/ui/Input";
+import Input from "@/components/ui/input";
 import { useDJs } from "@/hooks/useDJs";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { eventService } from "@/services/supabaseService";

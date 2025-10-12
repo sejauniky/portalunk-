@@ -1143,6 +1143,12 @@ const AgendaManager = () => {
     toast({ title: "Item de Conteúdo atualizado" });
   }, [setContentItems, toast]);
 
+  const deleteItem = useCallback((id: string) => {
+    setPersonalItems((prev) => prev.filter((item) => item.id !== id));
+    setContentItems((prev) => prev.filter((item) => item.id !== id));
+    toast({ title: "Item excluído" });
+  }, [setPersonalItems, setContentItems, toast]);
+
   // Função para mudar o agrupamento do Kanban
   const changeKanbanGroupBy = (groupBy: KanbanGroupBy) => {
     setKanbanSettings(prev => ({ ...prev, groupBy }));

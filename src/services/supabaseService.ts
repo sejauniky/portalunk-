@@ -961,7 +961,11 @@ export const eventService = {
 
         if (!error) {
           updateEventColumnCache(allowedColumns);
-          await syncEventDjRelations(id, mergedDjIds, feeMap);
+          try {
+            await syncEventDjRelations(id, mergedDjIds, feeMap);
+          } catch (relErr) {
+            console.error('Failed to sync event-dj relations on update (non-fatal):', formatError(relErr));
+          }
           return { data: data as EnrichedEvent, error: null };
         }
 

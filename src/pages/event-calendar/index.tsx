@@ -89,6 +89,16 @@ const formatCurrencyLabel = (value: number): string =>
 
 const formatDateLabel = (value: string | null | undefined): string => {
   if (!value) return "";
+  // Parse YYYY-MM-DD as a LOCAL date to avoid timezone shifting to the previous day
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split('-').map((v) => Number(v));
+    const local = new Date(y, m - 1, d);
+    return local.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return value;

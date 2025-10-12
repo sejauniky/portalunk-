@@ -1455,6 +1455,7 @@ const DJsProfile = () => {
                 tiktok_url: toNullable(formData.get("tiktok_url")),
                 soundcloud_url: toNullable(formData.get("soundcloud_url")),
                 portifolio_url: toNullable(formData.get("portifolio_url")),
+                birth_date: toNullable(formData.get("birth_date")),
               };
               updateDJMutation.mutate(payload, { onSuccess: () => setIsEditDialogOpen(false) });
             }}

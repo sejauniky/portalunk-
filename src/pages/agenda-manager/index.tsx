@@ -444,6 +444,15 @@ const PersonalAgendaSection = ({
                       {status.label}
                     </Button>
                   ))}
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="h-8 text-xs"
+                    iconName="Trash2"
+                    onClick={() => { if (window.confirm('Excluir este compromisso?')) onDelete(item.id); }}
+                  >
+                    Excluir
+                  </Button>
                 </div>
               </div>
             ))}

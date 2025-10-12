@@ -234,10 +234,12 @@ const PersonalAgendaSection = ({
   items,
   onCreate,
   onUpdateStatus,
+  onDelete,
 }: {
   items: AgendaItem[];
   onCreate: (payload: Omit<AgendaItem, "id">) => void;
   onUpdateStatus: (id: string, status: AgendaItem["status"]) => void;
+  onDelete: (id: string) => void;
 }) => {
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());

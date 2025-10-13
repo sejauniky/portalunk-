@@ -4,8 +4,9 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/button';
 import PillActionButton from '../../../components/ui/PillActionButton';
 import { mediaService } from '../../../services/mediaService';
-import { djService, storageService } from '../../../services/supabaseService';
+import { djService } from '../../../services/supabaseService';
 import { useAuth } from '../../../hooks/use-auth';
+import { supabase } from '@/lib/supabase';
 
 const DJMediaGallery = ({ djId }) => {
   const { userProfile } = useAuth();
@@ -148,43 +149,33 @@ const DJMediaGallery = ({ djId }) => {
     count: mediaFiles[cat.id]?.length || 0
   })).filter(cat => cat.count > 0);
 
-  const sha256 = async (text) => {
-    const msgUint8 = new TextEncoder().encode(text);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
-  };
-
   const handleGenerateShare = async (e) => {
     e?.preventDefault?.();
     if (!djId || !djName) return;
-    if (!sharePassword || sharePassword.length < 4) {
-      toast.error('Defina uma senha com pelo menos 4 caracteres');
+    const slugify = (s) => (s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-');
+    if (!/^[0-9]{4}$/.test(sharePassword)) {
+      toast.error('A senha deve conter exatamente 4 dígitos (ex: 1234)');
       return;
     }
     setShareGenerating(true);
     try {
-      const token = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-      const password_hash = await sha256(sharePassword);
-      const payload = {
-        token,
-        djId,
-        djName,
-        producerId: userProfile?.id || null,
-        createdAt: new Date().toISOString(),
-        password_hash
-      };
-      const path = `links/${token}.json`;
-      const { error } = await storageService.uploadJson('shared-links', path, payload);
-      if (error) {
-        toast.error(error);
-        return;
-      }
-      const link = `${window.location.origin}/share/${token}`;
+      const days = 5; // prazo padrão de validade
+      const { data, error } = await supabase.functions.invoke('create-share-link', {
+        body: { djId, days, pin: sharePassword },
+      });
+      if (error) throw error;
+      const slug = slugify(djName);
+      const link = `${window.location.origin}/share/${encodeURIComponent(slug)}`;
       setShareUrl(link);
       toast.success('Link gerado!');
     } catch (err) {
+      console.error('Falha ao gerar link', err);
       toast.error('Falha ao gerar link');
     } finally {
       setShareGenerating(false);

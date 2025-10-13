@@ -375,27 +375,26 @@ const DJProfileProducer = () => {
     setLocation("/producer-dashboard");
   }, [setLocation]);
 
+  const slugify = (s: string) =>
+    (s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-');
+
   const handleGenerateShareLink = async () => {
-    // senha precisa ser exatamente 4 dígitos numéricos
     if (!/^[0-9]{4}$/.test(sharePassword)) {
-      toast({
-        title: "Senha inválida",
-        description: "A senha deve conter exatamente 4 dígitos numéricos (ex: 1234)",
-        variant: "destructive",
-      });
+      toast({ title: "Senha inválida", description: "A senha deve conter exatamente 4 dígitos numéricos (ex: 1234)", variant: "destructive" });
       return;
     }
 
     const days = Number.parseInt(shareDays, 10);
     if (!Number.isFinite(days) || days < 1 || days > 7) {
-      toast({
-        title: "Prazo inválido",
-        description: "O prazo deve ser entre 1 e 7 dias",
-        variant: "destructive",
-      });
+      toast({ title: "Prazo inválido", description: "O prazo deve ser entre 1 e 7 dias", variant: "destructive" });
       return;
     }
-
     if (!djId || !producerId) {
       toast({ title: "Dados incompletos", description: "Não foi possível identificar o DJ ou produtor." });
       return;
@@ -403,22 +402,15 @@ const DJProfileProducer = () => {
 
     try {
       setGeneratedLink("");
-
-      // Invoke Supabase Edge Function to create share link and get pin
-      const { data, error } = await supabase.functions.invoke('create-share-link', {
-        body: { djId, days: days, pin: sharePassword || undefined },
-      });
-
+      const { data, error } = await supabase.functions.invoke('create-share-link', { body: { djId, days: days, pin: sharePassword || undefined } });
       if (error) throw error;
 
-      const shareToken = data?.share_token;
       const returnedPin = data?.pin;
-      if (!shareToken) throw new Error('No token returned');
-
-      const link = `${window.location.origin}/share/${shareToken}`;
+      const artist = (dj?.artist_name || '').trim();
+      const slug = artist ? slugify(artist) : djId;
+      const link = `${window.location.origin}/share/${encodeURIComponent(slug)}`;
       setGeneratedLink(link);
 
-      // show returned PIN to the producer
       toast({ title: 'Link criado', description: `PIN: ${returnedPin} — válido por ${days} dias.` });
     } catch (error) {
       console.error("Erro ao gerar link:", error);

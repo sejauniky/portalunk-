@@ -11,7 +11,7 @@ const ShareHistory = ({ producerId, onRevoke }: { producerId: string; onRevoke?:
     try {
       const { data, error } = await (supabase as any)
         .from('shared_media_links')
-        .select('id, share_token, expires_at, created_at, accessed_count')
+        .select('id, share_token, expires_at, created_at, accessed_count, dj_id, djs ( artist_name )')
         .eq('producer_id', producerId)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -46,18 +46,31 @@ const ShareHistory = ({ producerId, onRevoke }: { producerId: string; onRevoke?:
         <p className="text-sm text-muted-foreground">Nenhum link gerado ainda.</p>
       ) : (
         <div className="space-y-3">
-          {links.map((l) => (
-            <div key={l.id} className="p-3 border border-border rounded-md flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium">{window.location.origin}/share/{l.share_token}</div>
-                <div className="text-xs text-muted-foreground">Expira em: {new Date(l.expires_at).toLocaleString()}</div>
+          {links.map((l) => {
+            const artistName = (l?.djs?.artist_name || '').trim();
+            const slug = artistName
+              ? artistName
+                  .toLowerCase()
+                  .normalize('NFD')
+                  .replace(/[\u0300-\u036f]/g, '')
+                  .replace(/[^a-z0-9\s-]/g, '')
+                  .trim()
+                  .replace(/\s+/g, '-')
+              : '';
+            const url = slug ? `${window.location.origin}/share/${encodeURIComponent(slug)}` : `${window.location.origin}/share/${l.share_token}`;
+            return (
+              <div key={l.id} className="p-3 border border-border rounded-md flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium">{url}</div>
+                  <div className="text-xs text-muted-foreground">Expira em: {new Date(l.expires_at).toLocaleString()}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-xs text-muted-foreground">Acessos: {l.accessed_count || 0}</div>
+                  <Button size="sm" onClick={() => revoke(l.id)} variant="destructive">Revogar</Button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-muted-foreground">Acessos: {l.accessed_count || 0}</div>
-                <Button size="sm" onClick={() => revoke(l.id)} variant="destructive">Revogar</Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

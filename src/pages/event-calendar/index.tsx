@@ -130,6 +130,15 @@ const applyTemplatePlaceholders = (
     .filter((s) => s.length > 0)
     .join(', ');
 
+  const producerCnpj = String((producer as any)?.cnpj ?? '');
+  const producerAddrParts = [
+    String((producer as any)?.business_address ?? (producer as any)?.address ?? ''),
+    String((producer as any)?.zip_code ?? ''),
+  ]
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  const producerAddress = producerAddrParts.join(' - ');
+
   const replacements: Record<string, string> = {
     '{DJ_NAME}': String(firstDj || 'DJ'),
     '{DJ_NAMES}': String(djNames || firstDj || 'DJ'),
@@ -141,14 +150,21 @@ const applyTemplatePlaceholders = (
     '{AMOUNT}': formatCurrencyLabel(ensureCurrencyNumber(contract.value)),
     '{PRODUCER_NAME}': String(producer?.name ?? 'Produtor'),
     '{PRODUCER_COMPANY}': String((producer as any)?.company_name ?? ''),
-    '{CPF_CNPJ}': String((producer as any)?.cnpj ?? ''),
+    '{CPF_CNPJ}': producerCnpj,
+    '{CNPJ}': producerCnpj,
+    '{CNPJ_CONTRATANTE}': producerCnpj,
+    '{CPF_CONTRATANTE}': producerCnpj,
+    '{ENDERECO_CONTRATANTE}': producerAddress,
+    '{ENDEREÇO_CONTRATANTE}': producerAddress,
+    '{PRODUCER_CNPJ}': producerCnpj,
+    '{PRODUCER_ADDRESS}': producerAddress,
     '{COMMISSION_RATE}': (event as any)?.commission_rate != null ? `${(event as any).commission_rate}%` : '',
     '{STATUS}': String(event.status ?? ''),
   };
 
   let out = template;
   Object.entries(replacements).forEach(([key, val]) => {
-    out = out.replace(new RegExp(key, 'g'), val);
+    out = out.replace(new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), val);
   });
   return out;
 };

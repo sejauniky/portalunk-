@@ -233,6 +233,23 @@ const applyTemplatePlaceholders = (
     out = out.replace(/\[\s*DATA\s+DO\s+PAGAMENTO\s*\]/gi, eventDateLabel);
   }
 
+  // Fill bank/payment details if label present or append if missing
+  if (paymentDetails) {
+    const pd = String(paymentDetails);
+    const fillIfEmpty = (regex: RegExp) => {
+      out = out.replace(regex, (m, p1, p2) => {
+        const hasText = p2 && p2.trim().length > 0 && !/\[.*?\]/.test(p2);
+        return hasText ? m : `${p1}${pd}`;
+      });
+    };
+    fillIfEmpty(/(DADOS\s+(PARA\s+)?PAGAMENTO\s*:\s*)([^\n]*)/gi);
+    fillIfEmpty(/(CONTA\s+(PARA\s+)?PAGAMENTO\s*:\s*)([^\n]*)/gi);
+
+    if (!new RegExp(pd.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(out)) {
+      out = `${out}\n\nDados para pagamento: ${pd}`;
+    }
+  }
+
   return out;
 };
 

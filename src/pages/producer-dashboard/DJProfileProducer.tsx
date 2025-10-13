@@ -67,6 +67,7 @@ interface Event {
   fee: number;
   payment_status: string | null;
   contract_attached?: boolean | null;
+  contract_content?: string | null;
   cache_value?: number | string | null;
   budget?: number | string | null;
 }
@@ -330,17 +331,17 @@ const DJProfileProducer = () => {
     useEffect(() => {
       let mounted = true;
       const checkSignature = async () => {
-        if (!event?.id) return;
+        if (!event?.id || !djId) return;
         try {
           const { data } = await supabase
-            .from("digital_signatures")
-            .select("id")
-            .eq("contract_instance_id", event.id)
-            .eq("signer_type", "producer")
+            .from("contract_instances")
+            .select("id, signature_status")
+            .eq("event_id", event.id)
+            .eq("dj_id", djId)
             .maybeSingle();
 
           if (mounted) {
-            setIsSigned(Boolean(data));
+            setIsSigned(Boolean(data && data.signature_status === "signed"));
           }
         } catch (error) {
           if (mounted) {
@@ -353,7 +354,7 @@ const DJProfileProducer = () => {
       return () => {
         mounted = false;
       };
-    }, [event?.id]);
+    }, [event?.id, djId]);
 
     if (!event.contract_attached) return null;
 
@@ -827,17 +828,58 @@ const DJProfileProducer = () => {
                                   onOpen={async (currentEvent) => {
                                     setSelectedEventForContract(currentEvent);
                                     try {
-                                      const { data, error } = await supabase
+                                      // Try to fetch existing contract instance for this event + DJ
+                                      let { data, error } = await supabase
                                         .from("contract_instances")
                                         .select("id, contract_content, signature_status")
                                         .eq("event_id", currentEvent.id)
                                         .eq("dj_id", djId)
                                         .maybeSingle();
+
+                                      if ((error || !data) && djId) {
+                                        // If not found, attempt to create a per-DJ contract instance on demand
+                                        try {
+                                          const { data: evInfo } = await supabase
+                                            .from("events")
+                                            .select("contract_type, producer_id")
+                                            .eq("id", currentEvent.id)
+                                            .maybeSingle();
+
+                                          const contractType = (evInfo as any)?.contract_type || "basic";
+                                          const ownerProducerId = (evInfo as any)?.producer_id || producerId || "";
+
+                                          if (ownerProducerId) {
+                                            await supabase.functions.invoke('create-event-contracts', {
+                                              body: {
+                                                eventId: currentEvent.id,
+                                                djIds: [djId],
+                                                contractType,
+                                                producerId: ownerProducerId,
+                                              },
+                                            });
+
+                                            // Fetch again after creation
+                                            const retry = await supabase
+                                              .from("contract_instances")
+                                              .select("id, contract_content, signature_status")
+                                              .eq("event_id", currentEvent.id)
+                                              .eq("dj_id", djId)
+                                              .maybeSingle();
+                                            data = retry.data as any;
+                                            error = retry.error as any;
+                                          }
+                                        } catch (creationErr) {
+                                          // proceed to show error below
+                                        }
+                                      }
+
                                       if (error || !data) {
                                         toast({ title: "Contrato não disponível", description: "Nenhuma instância de contrato encontrada para este evento.", variant: "destructive" });
                                         return;
                                       }
-                                      setContractInstance({ id: String(data.id), content: data.contract_content || "", signature_status: data.signature_status || "pending" });
+
+                                      const resolvedContent = (currentEvent as any)?.contract_content || data.contract_content || "";
+                                      setContractInstance({ id: String(data.id), content: resolvedContent, signature_status: data.signature_status || "pending" });
                                       setContractModalOpen(true);
                                     } catch (e) {
                                       toast({ title: "Erro", description: "Falha ao abrir contrato.", variant: "destructive" });

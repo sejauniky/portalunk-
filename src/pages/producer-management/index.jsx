@@ -193,6 +193,12 @@ const ProducerManagement = () => {
   const [selectedAvatarPreview, setSelectedAvatarPreview] = useState('');
   const fileInputRef = useRef(null);
 
+  const formatCep = (value) => {
+    const digits = String(value || '').replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 5) return digits;
+    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  };
+
   useEffect(() => {
     if (editData) {
       setFormData({
@@ -349,6 +355,11 @@ const ProducerManagement = () => {
     if (!editData) return;
     if (!formData?.name || !formData?.email) {
       alert('Nome e email são obrigatórios');
+      return;
+    }
+
+    if (formData?.zip_code && !/^\d{5}-\d{3}$/.test(formatCep(formData.zip_code))) {
+      alert('CEP inválido. Use o formato 00000-000');
       return;
     }
 
@@ -731,7 +742,7 @@ const ProducerManagement = () => {
 
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input value={formData?.address} onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))} placeholder="Endereço" />
-                <Input value={formData?.zip_code} onChange={(e) => setFormData(prev => ({ ...prev, zip_code: e.target.value }))} placeholder="CEP" />
+                <Input value={formData?.zip_code} onChange={(e) => setFormData(prev => ({ ...prev, zip_code: formatCep(e.target.value) }))} placeholder="00000-000" />
               </div>
 
               <div className="flex items-center space-x-2 mt-4">

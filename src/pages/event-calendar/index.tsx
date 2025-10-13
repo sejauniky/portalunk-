@@ -120,6 +120,7 @@ const applyTemplatePlaceholders = (
   contract: EventContractFormState,
   dj: CalendarDJ | null,
   producer: CalendarProducer | null,
+  paymentDetails?: string,
 ): string => {
   if (!template) return "";
 

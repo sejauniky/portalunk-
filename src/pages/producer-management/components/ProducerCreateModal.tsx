@@ -28,6 +28,12 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const formatCep = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 5) return digits;
+    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  };
+
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -92,6 +98,12 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
 
     const loginAlias = `${sanitizedPrefix}@unk`;
     const supabaseEmail = `${loginAlias}.com`;
+
+    // Validate CEP if provided
+    if (formData.zip_code && !/^\d{5}-\d{3}$/.test(formatCep(formData.zip_code))) {
+      toast.error('CEP inválido. Use o formato 00000-000');
+      return;
+    }
 
     setLoading(true);
 
@@ -338,8 +350,8 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
             <Input
               label="CEP"
               value={formData.zip_code}
-              onChange={(e) => handleChange('zip_code', e.target.value)}
-              placeholder="01234-567"
+              onChange={(e) => handleChange('zip_code', formatCep(e.target.value))}
+              placeholder="00000-000"
               wrapperClassName="w-full"
             />
           </div>

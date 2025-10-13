@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FileText, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -26,6 +27,7 @@ export const ContractViewModal = ({
   onSign,
 }: ContractViewModalProps) => {
   const [isSigning, setIsSigning] = useState(false);
+  const [agree, setAgree] = useState(false);
 
   const handleSign = async () => {
     setIsSigning(true);
@@ -36,6 +38,18 @@ export const ContractViewModal = ({
         .eq("id", contractId);
 
       if (error) throw error;
+
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        await supabase.from("digital_signatures").insert({
+          contract_instance_id: contractId,
+          signer_id: userData?.user?.id ?? null,
+          signer_type: "producer",
+          signed_at: new Date().toISOString(),
+        } as any);
+      } catch (_) {
+        // best-effort audit trail; ignore errors here
+      }
 
       toast({
         title: "Contrato assinado",
@@ -75,15 +89,23 @@ export const ContractViewModal = ({
 
         <DialogFooter className="gap-2">
           {isSigned ? (
-            <div className="flex items-center gap-2 text-green-600">
+            <div className="flex items-center gap-2 text-green-600 mr-auto">
               <Check className="h-5 w-5" />
               <span className="font-medium">Contrato Assinado</span>
             </div>
           ) : (
-            <Button onClick={handleSign} disabled={isSigning} className="gap-2">
-              <FileText className="h-4 w-4" />
-              {isSigning ? "Assinando..." : "Assinar Contrato"}
-            </Button>
+            <>
+              <div className="flex items-center gap-2 mr-auto">
+                <Checkbox id="agree" checked={agree} onCheckedChange={(v) => setAgree(Boolean(v))} />
+                <label htmlFor="agree" className="text-sm select-none">
+                  Li e concordo com os termos do contrato
+                </label>
+              </div>
+              <Button onClick={handleSign} disabled={isSigning || !agree} className="gap-2">
+                <Check className="h-4 w-4" />
+                {isSigning ? "Assinando..." : "Li e concordo"}
+              </Button>
+            </>
           )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Fechar

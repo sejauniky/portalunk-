@@ -16,6 +16,18 @@ const EventModal = ({ djId, producerId, isOpen, onClose }: { djId: string; produ
   const [latestReceipt, setLatestReceipt] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
+  const formatDateLocal = (value?: string | null) => {
+    if (!value) return 'Data não informada';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [y, m, d] = value.split('-').map((part) => Number.parseInt(part, 10));
+      const localDate = new Date(y, (m || 1) - 1, d || 1);
+      return localDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+    }
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return 'Data não informada';
+    return parsed.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  };
+
   const load = async () => {
     setLoading(true);
     try {
@@ -35,7 +47,28 @@ const EventModal = ({ djId, producerId, isOpen, onClose }: { djId: string; produ
         };
         return toTs(b) - toTs(a);
       });
-      setEvents(filtered as any[]);
+      // Resolve contract signatures per event for this DJ
+      const eventIds = filtered.map((ev: any) => ev?.id).filter(Boolean);
+      const signedMap = new Map<string, boolean>();
+      if (eventIds.length) {
+        try {
+          const { data: instances } = await supabase
+            .from('contract_instances')
+            .select('event_id, dj_id, signature_status')
+            .in('event_id', eventIds)
+            .eq('dj_id', djId);
+          (instances || []).forEach((row: any) => {
+            if (row?.event_id && row?.signature_status === 'signed') {
+              signedMap.set(String(row.event_id), true);
+            }
+          });
+        } catch (_) {
+          // ignore errors
+        }
+      }
+
+      const enriched = filtered.map((ev: any) => ({ ...ev, contract_signed: Boolean(signedMap.get(String(ev.id))) }));
+      setEvents(enriched as any[]);
     } catch (err) {
       console.error('Failed load events for dj', err);
       setEvents([]);
@@ -110,7 +143,7 @@ const EventModal = ({ djId, producerId, isOpen, onClose }: { djId: string; produ
           {loading ? <div>Carregando...</div> : (
             <div className="space-y-3">
               {events.length === 0 ? <p className="text-muted-foreground">Nenhum evento encontrado com este DJ.</p> : events.map(ev => {
-                const isContractSigned = ev.contract_attached;
+                const isContractSigned = Boolean((ev as any).contract_signed);
                 const isPaid = ev.payment_status === 'pago';
                 const isPaymentSent = ev.payment_status === 'pagamento_enviado';
                 
@@ -120,13 +153,7 @@ const EventModal = ({ djId, producerId, isOpen, onClose }: { djId: string; produ
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1">
                           <h4 className="font-semibold text-lg">{ev.event_name || ev.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {ev.event_date ? new Date(ev.event_date).toLocaleDateString('pt-BR', {
-                              day: '2-digit',
-                              month: 'long',
-                              year: 'numeric'
-                            }) : 'Data não informada'}
-                          </p>
+                          <p className="text-sm text-muted-foreground">{formatDateLocal(ev.event_date)}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-lg font-bold text-foreground">

@@ -429,19 +429,20 @@ const ProducerManagement = () => {
         console.warn('Falha ao atualizar registro em producers:', prodUpdateError);
       }
 
-      // Update password if provided
+      // Update password if provided (admin edge function)
       if (newPassword?.trim()) {
+        const profileIdForPw = editData.profile_id || editData.id;
         const { data: prof, error: profErr } = await supabase
           .from('profiles')
-          .select('user_id')
-          .eq('id', editData.id)
+          .select('id')
+          .eq('id', profileIdForPw)
           .single();
-        if (profErr || !prof?.user_id) {
+        if (profErr || !prof?.id) {
           alert('Erro ao obter usuário para atualizar senha');
           return;
         }
-        const { data: pwRes, error: pwErr } = await supabase.functions.invoke('update-user-password', {
-          body: { userId: prof.user_id, newPassword }
+        const { data: pwRes, error: pwErr } = await supabase.functions.invoke('admin-reset-password', {
+          body: { userId: prof.id, newPassword }
         });
         if (pwErr || pwRes?.error) {
           alert(pwErr?.message || pwRes?.error || 'Erro ao atualizar senha');

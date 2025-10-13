@@ -19,6 +19,7 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
     company_name: '',
     cnpj: '',
     address: '',
+    zip_code: '',
     password: '',
     confirmPassword: '',
   });
@@ -171,6 +172,7 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
           company_name: formData.company_name || null,
           cnpj: formData.cnpj || null,
           address: formData.address || null,
+          zip_code: formData.zip_code || null,
           avatar_url: avatarUrl,
           is_active: true
         });
@@ -194,6 +196,7 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
         company_name: '',
         cnpj: '',
         address: '',
+        zip_code: '',
         password: '',
         confirmPassword: '',
       });
@@ -330,6 +333,14 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
               onChange={(e) => handleChange('address', e.target.value)}
               placeholder="Rua, Número, Cidade - Estado"
               wrapperClassName="md:col-span-2"
+            />
+
+            <Input
+              label="CEP"
+              value={formData.zip_code}
+              onChange={(e) => handleChange('zip_code', e.target.value)}
+              placeholder="01234-567"
+              wrapperClassName="w-full"
             />
           </div>
 

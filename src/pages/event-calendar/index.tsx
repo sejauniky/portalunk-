@@ -31,6 +31,10 @@ type CompanySettingsRow = {
   contract_basic?: string | null;
   contract_intermediate?: string | null;
   contract_premium?: string | null;
+  bank_name?: string | null;
+  bank_agency?: string | null;
+  bank_account?: string | null;
+  pix_key?: string | null;
 };
 
 const CONTRACT_TEMPLATE_SOURCES: ReadonlyArray<{

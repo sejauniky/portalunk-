@@ -878,7 +878,8 @@ const DJProfileProducer = () => {
                                         return;
                                       }
 
-                                      setContractInstance({ id: String(data.id), content: data.contract_content || "", signature_status: data.signature_status || "pending" });
+                                      const resolvedContent = (currentEvent as any)?.contract_content || data.contract_content || "";
+                                      setContractInstance({ id: String(data.id), content: resolvedContent, signature_status: data.signature_status || "pending" });
                                       setContractModalOpen(true);
                                     } catch (e) {
                                       toast({ title: "Erro", description: "Falha ao abrir contrato.", variant: "destructive" });

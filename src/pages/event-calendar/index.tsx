@@ -524,6 +524,73 @@ const EventCalendar = () => {
           });
         }
 
+        // Buscar templates e processar contrato automaticamente
+        try {
+          const { data: settingsData } = await supabase
+            .from("company_settings")
+            .select("contract_basic, contract_intermediate, contract_premium")
+            .maybeSingle();
+
+          if (settingsData) {
+            const templates = createTemplateOptions(settingsData);
+            const contractType = values.contract_type || 'basic';
+            const selectedTemplate = templates.find(t => t.id === contractType);
+
+            if (selectedTemplate?.content) {
+              const [djData, producerData] = await Promise.all([
+                values.dj_ids && values.dj_ids.length > 0
+                  ? resolveDj(values.dj_ids[0])
+                  : Promise.resolve(null),
+                values.producer_id
+                  ? resolveProducer(values.producer_id)
+                  : Promise.resolve(null)
+              ]);
+
+              const tempEvent = {
+                id: eventId,
+                title: values.title,
+                event_date: values.event_date,
+                location: values.location,
+                cache_value: payload.cache_value,
+                city: values.city,
+                description: values.description,
+                status: values.status,
+                dj_id: values.dj_ids?.[0] || '',
+                producer_id: values.producer_id || '',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                contract_type: contractType,
+              } as any;
+
+              const tempContract = {
+                ...DEFAULT_CONTRACT_FORM,
+                id: eventId,
+                templateId: contractType,
+                content: selectedTemplate.content,
+                value: payload.cache_value,
+              };
+
+              const processedContent = applyTemplatePlaceholders(
+                selectedTemplate.content,
+                tempEvent,
+                tempContract,
+                djData,
+                producerData
+              );
+
+              await supabase
+                .from("events")
+                .update({
+                  contract_content: processedContent,
+                  contract_type: contractType
+                })
+                .eq("id", eventId);
+            }
+          }
+        } catch (contractError) {
+          console.error("Erro ao processar contrato:", contractError);
+        }
+
         // IMPORTANTE: Processar os múltiplos DJs
         if (values.dj_ids && Array.isArray(values.dj_ids) && values.dj_ids.length > 0) {
           try {

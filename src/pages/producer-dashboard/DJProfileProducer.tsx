@@ -1054,6 +1054,8 @@ const DJProfileProducer = () => {
         contractContent={contractInstance?.content || ""}
         eventName={selectedEventForContract?.event_name || (selectedEventForContract as any)?.title || "Evento"}
         signatureStatus={contractInstance?.signature_status || "pending"}
+        eventId={selectedEventForContract?.id || (selectedEventForContract as any)?.id || ""}
+        djId={djId || undefined}
         onSign={async () => {
           queryClient.invalidateQueries({ queryKey: ["producer-dj-events", djId, producerId] });
           setSignatureRefresh((v) => v + 1);

@@ -906,12 +906,25 @@ const EventCalendar = () => {
 
     try {
       const template = contractTemplates.find((item) => item.id === contractState.templateId);
+
+      const { data: settings } = await supabase
+        .from("company_settings")
+        .select("bank_name, bank_agency, bank_account, pix_key")
+        .maybeSingle<CompanySettingsRow>();
+      const paymentDetails = [
+        settings?.bank_name ? `Banco: ${settings.bank_name}` : null,
+        settings?.bank_agency ? `Agência: ${settings.bank_agency}` : null,
+        settings?.bank_account ? `Conta: ${settings.bank_account}` : null,
+        settings?.pix_key ? `PIX: ${settings.pix_key}` : null,
+      ].filter(Boolean).join(' | ');
+
       const processedContent = applyTemplatePlaceholders(
         contractState.content || template?.content || "",
         contractEvent,
         contractState,
         contractDj,
         contractProducer,
+        paymentDetails
       );
 
       const { error } = await supabase

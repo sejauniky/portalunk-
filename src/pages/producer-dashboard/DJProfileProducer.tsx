@@ -91,6 +91,7 @@ const DJProfileProducer = () => {
   const [selectedEventForContract, setSelectedEventForContract] = useState<Event | null>(null);
   const [contractInstance, setContractInstance] = useState<{ id: string; content: string; signature_status: string } | null>(null);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [signatureRefresh, setSignatureRefresh] = useState(0);
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [isNarrowViewport, setIsNarrowViewport] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -325,7 +326,7 @@ const DJProfileProducer = () => {
 
   const visibleEvents = (events || []).filter((event) => event.payment_status !== "pendente");
 
-  const EventContractButton = ({ event, onOpen }: { event: Event; onOpen: (value: Event) => void }) => {
+  const EventContractButton = ({ event, onOpen, refreshToken }: { event: Event; onOpen: (value: Event) => void; refreshToken: number }) => {
     const [isSigned, setIsSigned] = useState(false);
 
     useEffect(() => {
@@ -354,7 +355,7 @@ const DJProfileProducer = () => {
       return () => {
         mounted = false;
       };
-    }, [event?.id, djId]);
+    }, [event?.id, djId, refreshToken]);
 
     if (!event.contract_attached) return null;
 
@@ -825,6 +826,7 @@ const DJProfileProducer = () => {
                               <div className="md:col-span-3 flex flex-col items-start md:items-end gap-2">
                                 <EventContractButton
                                   event={event}
+                                  refreshToken={signatureRefresh}
                                   onOpen={async (currentEvent) => {
                                     setSelectedEventForContract(currentEvent);
                                     try {
@@ -1047,6 +1049,8 @@ const DJProfileProducer = () => {
         signatureStatus={contractInstance?.signature_status || "pending"}
         onSign={async () => {
           queryClient.invalidateQueries({ queryKey: ["producer-dj-events", djId, producerId] });
+          setSignatureRefresh((v) => v + 1);
+          setContractInstance((prev) => (prev ? { ...prev, signature_status: "signed" } : prev));
         }}
       />
 

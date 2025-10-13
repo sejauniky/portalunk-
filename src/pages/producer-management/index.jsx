@@ -5,12 +5,12 @@ import { Icon } from '../../components/Icon';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
-import { producerService, djService, storageService, eventService } from '../../services/supabaseService';
+import { producerService, storageService } from '../../services/supabaseService';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '../../hooks/use-auth';
 import { ProducerCreateModal } from './components/ProducerCreateModal';
 
-const ProducerCard = ({ producer, eventCount, onView, onEdit, onChangePassword, onSelectDJ, onDelete, isDeleting }) => {
+const ProducerCard = ({ producer, eventCount, onView, onEdit, onChangePassword, onDelete, isDeleting }) => {
   const rawAvatar = producer?.avatar_url || producer?.profile_image_url || '';
 
   const getAvatarUrl = (raw) => {
@@ -128,14 +128,6 @@ const ProducerCard = ({ producer, eventCount, onView, onEdit, onChangePassword, 
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
-              className="w-full rounded-xl border border-primary/30 bg-primary/10 text-slate-100 hover:border-primary/50 hover:bg-primary/20 sm:w-auto"
-              onClick={() => onSelectDJ(producer)}
-              icon={<Icon name="Users" size={16} className="text-primary" />}
-            >
-              Selecionar DJ
-            </Button>
-            <Button
-              size="sm"
               variant="outline"
               className="w-full rounded-xl border border-rose-400/40 text-rose-200 bg-[rgba(208,2,27,0.21)] hover:bg-rose-500/15 sm:w-auto"
               onClick={() => onDelete?.(producer)}
@@ -164,13 +156,10 @@ const ProducerManagement = () => {
   const isAdmin = userProfile?.role === 'admin';
 
   const { data: producers = [], loading: loadingProducers, refetch: refetchProducers, error: producersError } = useSupabaseData(producerService, 'getAll', [], []);
-  const { data: djs = [], loading: loadingDjs } = useSupabaseData(djService, 'getAll', [], []);
-  const { data: events = [] } = useSupabaseData(eventService, 'getAll', [], []);
 
   const [selected, setSelected] = useState(null);
   const [editData, setEditData] = useState(null);
   const [passwordFor, setPasswordFor] = useState(null);
-  const [selectDJFor, setSelectDJFor] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const [evaluationRating, setEvaluationRating] = useState(null);
@@ -498,16 +487,6 @@ const ProducerManagement = () => {
     }
   };
 
-  const onSubmitSelectDJ = async (producer, djId) => {
-    const res = await producerService.setDashboardDJ(producer?.id, djId);
-    if (res?.error) {
-      alert(res.error);
-    } else {
-      alert('DJ definido para o dashboard do produtor');
-      setSelectDJFor(null);
-      refetchProducers();
-    }
-  };
 
   const handleDeleteProducer = async (producer) => {
     const profileId = producer?.id ?? producer?.profile_id;
@@ -642,7 +621,6 @@ const ProducerManagement = () => {
                     onView={setSelected}
                     onEdit={setEditData}
                     onChangePassword={setPasswordFor}
-                    onSelectDJ={setSelectDJFor}
                     onDelete={handleDeleteProducer}
                     isDeleting={isDeleting}
                   />
@@ -788,31 +766,6 @@ const ProducerManagement = () => {
           </div>
         )}
 
-        {/* Select DJ Modal */}
-        {selectDJFor && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-            <div className="bg-card border border-border rounded-lg w-full max-w-md p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-foreground">Selecionar DJ para o dashboard</h2>
-                <Button variant="ghost" size="icon" onClick={() => setSelectDJFor(null)}><Icon name="X" size={18} /></Button>
-              </div>
-              {loadingDjs ? (
-                <div className="flex justify-center py-8">
-                  <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-80 overflow-y-auto">
-                  {(djs || []).map((dj) => (
-                    <button key={dj?.id} className="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-muted text-left" onClick={() => onSubmitSelectDJ(selectDJFor, dj?.id)}>
-                      <span className="text-sm text-foreground">{dj?.name}</span>
-                      <Icon name="ChevronRight" size={16} className="text-muted-foreground" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
   );
 };

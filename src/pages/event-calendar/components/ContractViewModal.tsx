@@ -36,7 +36,7 @@ export const ContractViewModal = ({
   const handleSign = async () => {
     setIsSigning(true);
     try {
-      let resolvedContractId = contractId;
+      let resolvedContractId = contractId && contractId.trim().length > 0 ? contractId : "";
 
       if (!resolvedContractId && eventId && djId) {
         // Try to find existing instance
@@ -50,28 +50,69 @@ export const ContractViewModal = ({
         if (existing?.data?.id) {
           resolvedContractId = String(existing.data.id);
         } else {
-          // Attempt to create instance via edge function
+          // Fetch event info
           const { data: evInfo } = await supabase
             .from("events")
-            .select("contract_type, producer_id")
+            .select("contract_type, producer_id, cache_value")
             .eq("id", eventId)
             .maybeSingle();
 
           const contractType = (evInfo as any)?.contract_type || "basic";
           const ownerProducerId = (evInfo as any)?.producer_id || null;
+          const eventCache = Number((evInfo as any)?.cache_value) || 0;
 
+          // Attempt to create via edge function first
+          let created = false;
           if (ownerProducerId) {
-            await supabase.functions.invoke('create-event-contracts', {
+            const invokeRes = await supabase.functions.invoke('create-event-contracts', {
               body: { eventId, djIds: [djId], contractType, producerId: ownerProducerId }
             });
-            const retry = await supabase
-              .from("contract_instances")
-              .select("id")
-              .eq("event_id", eventId)
-              .eq("dj_id", djId)
-              .maybeSingle();
-            if (retry?.data?.id) {
-              resolvedContractId = String(retry.data.id);
+            if (!(invokeRes as any)?.error) {
+              const retry = await supabase
+                .from("contract_instances")
+                .select("id")
+                .eq("event_id", eventId)
+                .eq("dj_id", djId)
+                .maybeSingle();
+              if (retry?.data?.id) {
+                resolvedContractId = String(retry.data.id);
+                created = true;
+              }
+            }
+
+            // Fallback: direct insert if edge function unavailable
+            if (!created) {
+              // Resolve per-DJ fee if available
+              let contractValue = eventCache;
+              try {
+                const { data: ed } = await supabase
+                  .from('event_djs')
+                  .select('fee')
+                  .eq('event_id', eventId)
+                  .eq('dj_id', djId)
+                  .maybeSingle();
+                if (ed?.fee != null) contractValue = Number(ed.fee) || contractValue;
+              } catch {}
+
+              const nowIso = new Date().toISOString();
+              const insertRes = await supabase
+                .from('contract_instances')
+                .insert({
+                  event_id: eventId as any,
+                  dj_id: djId as any,
+                  producer_id: ownerProducerId as any,
+                  template_id: contractType,
+                  contract_content: contractContent || '',
+                  contract_value: contractValue || 0,
+                  signature_status: 'pending',
+                  payment_status: 'pending',
+                })
+                .select('id')
+                .maybeSingle();
+
+              if (insertRes?.data?.id) {
+                resolvedContractId = String(insertRes.data.id);
+              }
             }
           }
         }

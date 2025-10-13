@@ -59,7 +59,7 @@ export const ContractViewModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
+      <DialogContent className="w-[95vw] sm:w-full sm:max-w-4xl max-h-[90vh] sm:rounded-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -67,7 +67,7 @@ export const ContractViewModal = ({
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="h-[60vh] w-full rounded border p-4">
+        <ScrollArea className="h-[50vh] sm:h-[60vh] w-full rounded border p-4">
           <div className="whitespace-pre-wrap text-sm">
             {contractContent || "Conteúdo do contrato não disponível."}
           </div>

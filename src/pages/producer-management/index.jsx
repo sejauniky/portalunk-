@@ -34,7 +34,7 @@ const ProducerCard = ({ producer, eventCount, onView, onEdit, onChangePassword, 
   const totalEventsSource = eventCount ?? producer?.total_events ?? producer?.events_count ?? producer?.event_count ?? (Array.isArray(producer?.events) ? producer?.events.length : null);
   const totalEventsNumber = typeof totalEventsSource === 'number' ? totalEventsSource : Number(totalEventsSource);
   const totalEvents = Number.isFinite(totalEventsNumber) ? Math.max(0, totalEventsNumber) : null;
-  const formattedLocation = [producer?.city, producer?.state].filter(Boolean).join(', ') || producer?.location || '';
+  const formattedLocation = producer?.address || [producer?.city, producer?.state].filter(Boolean).join(', ') || producer?.location || '';
   const contactName = producer?.contact_person || producer?.responsible || producer?.manager || '';
   const infoItems = [
     { icon: 'Mail', value: producer?.email },
@@ -188,10 +188,8 @@ const ProducerManagement = () => {
     email: '',
     phone: '',
     company_name: '',
-    company_document: '',
+    cnpj: '',
     address: '',
-    city: '',
-    state: '',
     contact_person: '',
     is_active: true,
     avatar_url: ''
@@ -210,10 +208,8 @@ const ProducerManagement = () => {
         email: editData?.email || '',
         phone: editData?.phone || '',
         company_name: editData?.company_name || '',
-        company_document: editData?.company_document || '',
+        cnpj: editData?.cnpj || '',
         address: editData?.address || '',
-        city: editData?.city || '',
-        state: editData?.state || '',
         contact_person: editData?.contact_person || '',
         is_active: editData?.is_active ?? true,
         avatar_url: editData?.avatar_url || editData?.profile_image_url || ''
@@ -406,10 +402,8 @@ const ProducerManagement = () => {
         email: updates.email,
         phone: updates.phone,
         company_name: updates.company_name,
-        company_document: updates.company_document,
+        cnpj: updates.cnpj,
         address: updates.address,
-        city: updates.city,
-        state: updates.state,
         contact_person: updates.contact_person,
         is_active: updates.is_active,
         avatar_url: updates.avatar_url,
@@ -671,9 +665,8 @@ const ProducerManagement = () => {
                 <DetailRow label="Empresa" value={selected?.company_name} />
                 <DetailRow label="Email" value={selected?.email} />
                 <DetailRow label="Telefone" value={selected?.phone} />
-                <DetailRow label="CNPJ" value={selected?.company_document} />
-                <DetailRow label="Cidade" value={selected?.city} />
-                <DetailRow label="Estado" value={selected?.state} />
+                <DetailRow label="CNPJ" value={selected?.cnpj} />
+                <DetailRow label="Endereço" value={selected?.address} />
                 <DetailRow label="Contato" value={selected?.contact_person} />
               </div>
               <div className="mt-6 flex justify-end gap-2">
@@ -732,10 +725,8 @@ const ProducerManagement = () => {
                 <Input value={formData?.email} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} placeholder="Email *" type="email" />
                 <Input value={formData?.phone} onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))} placeholder="Telefone" />
                 <Input value={formData?.company_name} onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))} placeholder="Nome da Empresa" />
-                <Input value={formData?.company_document} onChange={(e) => setFormData(prev => ({ ...prev, company_document: e.target.value }))} placeholder="CNPJ" />
+                <Input value={formData?.cnpj} onChange={(e) => setFormData(prev => ({ ...prev, cnpj: e.target.value }))} placeholder="CNPJ" />
                 <Input value={formData?.contact_person} onChange={(e) => setFormData(prev => ({ ...prev, contact_person: e.target.value }))} placeholder="Pessoa de Contato" />
-                <Input value={formData?.city} onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))} placeholder="Cidade" />
-                <Input value={formData?.state} onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))} placeholder="Estado" />
               </div>
 
               <div className="mt-4">

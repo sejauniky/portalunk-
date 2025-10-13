@@ -21,9 +21,7 @@ interface DJ {
   artist_name: string;
   real_name?: string | null;
   email?: string | null;
-  phone?: string | null;
   avatar_url?: string | null;
-  bio?: string | null;
   genre?: string | null;
   base_price?: number | null;
   status?: string | null;
@@ -40,8 +38,6 @@ type DJFormValues = Omit<Pick<
   | "artist_name"
   | "real_name"
   | "email"
-  | "phone"
-  | "bio"
   | "genre"
   | "base_price"
   | "instagram_url"
@@ -230,8 +226,6 @@ const DJsPage = () => {
       artist_name: (formData.get("artist_name")?.toString() ?? "").trim(),
       real_name: formData.get("real_name")?.toString().trim() || null,
       email: formData.get("email")?.toString().trim() || null,
-      phone: formData.get("phone")?.toString().trim() || null,
-      bio: formData.get("bio")?.toString().trim() || null,
       genre: formData.get("genre")?.toString().trim() || null,
       base_price: parseBasePrice(),
       instagram_url: formData.get("instagram_url")?.toString().trim() || null,
@@ -288,9 +282,9 @@ const DJsPage = () => {
   }
 
   return (
-    <div className="flex-1 p-8">
+    <div className="flex-1 p-8" style={{ margin: '0 -18px 0 -4px' }}>
 
-      <div className="flex-1 p-8">
+      <div className="flex-1" style={{ marginLeft: '-56px', padding: '28px 0 73px 34px' }}>
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Gerenciar DJs</h1>
@@ -434,7 +428,13 @@ const DJsPage = () => {
                           </Badge>
                         )}
                         {statusLabel && (
-                          <Badge variant={dj.is_active ? "default" : "outline"}>{statusLabel}</Badge>
+                          <Badge
+                            variant={dj.is_active ? "default" : "outline"}
+                            className={dj.is_active ? "text-white" : undefined}
+                            style={dj.is_active ? { backgroundColor: 'rgba(10, 210, 221, 0.3)' } : undefined}
+                          >
+                            {statusLabel}
+                          </Badge>
                         )}
                       </div>
                     </div>
@@ -457,7 +457,7 @@ const DJsPage = () => {
 
                   <div className="flex items-center justify-between">
                     <Link href={`/dj-profile/${dj.id}`}>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" className="pr-3">
                         <Eye className="mr-1 h-4 w-4" />
                         Ver detalhes
                       </Button>

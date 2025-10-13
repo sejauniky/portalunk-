@@ -19,11 +19,11 @@ import {
   ArrowLeft,
   Save,
   Mail,
-  Phone,
   MapPin,
   Music,
   Instagram,
   Youtube,
+  Phone,
   Headphones,
   Calendar,
   DollarSign,
@@ -101,8 +101,6 @@ type DJUpdatePayload = {
   artist_name: string;
   real_name?: string | null;
   email?: string | null;
-  phone?: string | null;
-  bio?: string | null;
   genre?: string | null;
   base_price?: number | null;
   instagram_url?: string | null;
@@ -196,6 +194,11 @@ const formatDate = (value?: string | null) => {
   if (!value) return "-";
 
   try {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [y, m, d] = value.split('-').map(Number);
+      const local = new Date(y, (m ?? 1) - 1, d);
+      return local.toLocaleDateString("pt-BR");
+    }
     return new Date(value).toLocaleDateString("pt-BR");
   } catch (error) {
     console.error("Date formatting failed", error);
@@ -485,8 +488,6 @@ const DJsProfile = () => {
       artist_name: (formData.get("artist_name")?.toString() ?? "").trim(),
       real_name: toNullableString(formData.get("real_name")),
       email: toNullableString(formData.get("email")),
-      phone: toNullableString(formData.get("phone")),
-      bio: toNullableString(formData.get("bio")),
       genre: toNullableString(formData.get("genre")),
       base_price: Number.isFinite(basePriceValue) ? basePriceValue : null,
       instagram_url: toNullableString(formData.get("instagram_url")),
@@ -887,12 +888,7 @@ const DJsProfile = () => {
                     <Mail className="h-4 w-4 text-[#7f5cf7]" />
                     {dj.email}
                   </span>
-                )}
-                {dj.phone && (
-                  <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
-                    <Phone className="h-4 w-4 text-emerald-400" />
-                    {dj.phone}
-                  </span>
+                
                 )}
                 {dj.whatsapp && (
                   <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
@@ -1136,11 +1132,7 @@ const DJsProfile = () => {
                             <Label htmlFor="email">Email</Label>
                             <Input id="email" name="email" type="email" defaultValue={dj.email ?? ""} />
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="phone">Telefone</Label>
-                            <Input id="phone" name="phone" defaultValue={dj.phone ?? ""} />
-                          </div>
-                        </div>
+                             </div>
 
                         <div className="grid gap-4 md:grid-cols-2">
                           <div className="space-y-2">
@@ -1443,11 +1435,9 @@ const DJsProfile = () => {
                 artist_name: (formData.get("artist_name")?.toString() ?? "").trim(),
                 real_name: toNullable(formData.get("real_name")),
                 email: toNullable(formData.get("email")),
-                phone: toNullable(formData.get("phone")),
                 whatsapp: toNullable(formData.get("whatsapp")),
                 location: toNullable(formData.get("location")),
                 pix_key: toNullable(formData.get("pix_key")),
-                bio: toNullable(formData.get("bio")),
                 genre: toNullable(formData.get("genre")),
                 base_price: Number.isFinite(basePriceVal) ? basePriceVal : null,
                 instagram_url: toNullable(formData.get("instagram_url")),
@@ -1476,11 +1466,7 @@ const DJsProfile = () => {
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" name="email" type="email" defaultValue={dj.email ?? ""} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefone</Label>
-                <Input id="phone" name="phone" defaultValue={dj.phone ?? ""} />
-              </div>
-            </div>
+                 </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="birth_date">Data de Nascimento</Label>

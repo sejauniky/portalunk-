@@ -89,6 +89,16 @@ const formatCurrencyLabel = (value: number): string =>
 
 const formatDateLabel = (value: string | null | undefined): string => {
   if (!value) return "";
+  // Parse YYYY-MM-DD as a LOCAL date to avoid timezone shifting to the previous day
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split('-').map((v) => Number(v));
+    const local = new Date(y, m - 1, d);
+    return local.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return value;
@@ -450,6 +460,16 @@ const EventCalendar = () => {
   const handleSaveEvent = useCallback(
     async (values: EventFormValues) => {
       setEventFormSubmitting(true);
+
+      const isExempt = Boolean((values as any).cache_exempt);
+      const parsedCache = typeof values.cache_value === 'string'
+        ? parseFloat(values.cache_value) || 0
+        : values.cache_value || 0;
+      const parsedCommission = typeof values.commission_rate === 'string'
+        ? parseFloat(values.commission_rate) || 20
+        : values.commission_rate || 20;
+
+      // Prepara o payload básico do evento
       const payload = {
         event_name: values.title,
         title: values.title,
@@ -458,44 +478,175 @@ const EventCalendar = () => {
         location: values.location,
         venue: values.location,
         city: values.city,
-        cache_value:
-          typeof values.cache_value === "string"
-            ? parseFloat(values.cache_value) || 0
-            : values.cache_value || 0,
-        commission_rate:
-          typeof values.commission_rate === "string"
-            ? parseFloat(values.commission_rate) || 20
-            : values.commission_rate || 20,
+        cache_value: isExempt ? 0 : parsedCache,
+        commission_rate: isExempt ? 0 : parsedCommission,
         status: values.status,
-        dj_ids: Array.isArray(values.dj_ids) ? values.dj_ids : [],
+        // Mantém o primeiro DJ no campo dj_id para compatibilidade
+        dj_id: values.dj_ids && values.dj_ids.length > 0 ? values.dj_ids[0] : null,
         producer_id: values.producer_id,
+        contract_type: values.contract_type || 'basic',
+        cache_exempt: isExempt,
       };
 
       try {
+        let eventId: string;
+
+        // Criar ou atualizar o evento
         if (eventModalMode === "edit" && selectedEvent?.id) {
           const response = await eventService.update(selectedEvent.id, payload);
           if (response?.error) {
             const message =
-              response.error?.message || (typeof response.error === "string" ? response.error : "Erro desconhecido.");
+              response.error?.message ||
+              (typeof response.error === "string" ? response.error : "Erro desconhecido.");
             throw new Error(message);
           }
-          toast({ title: "Evento atualizado", description: "O evento foi atualizado com sucesso." });
+          eventId = selectedEvent.id;
+          toast({
+            title: "Evento atualizado",
+            description: "O evento foi atualizado com sucesso."
+          });
         } else {
           const response = await eventService.create(payload);
           if (response?.error) {
             const message =
-              response.error?.message || (typeof response.error === "string" ? response.error : "Erro desconhecido.");
+              response.error?.message ||
+              (typeof response.error === "string" ? response.error : "Erro desconhecido.");
             throw new Error(message);
           }
-          toast({ title: "Evento criado", description: "O evento foi criado com sucesso." });
+          // Assume que o response retorna o evento criado com o ID
+          eventId = response?.data?.id || response?.id;
+          if (!eventId) {
+            throw new Error("ID do evento não foi retornado após criação");
+          }
+          toast({
+            title: "Evento criado",
+            description: "O evento foi criado com sucesso."
+          });
+        }
+
+        // Buscar templates e processar contrato automaticamente
+        try {
+          const { data: settingsData } = await supabase
+            .from("company_settings")
+            .select("contract_basic, contract_intermediate, contract_premium")
+            .maybeSingle();
+
+          if (settingsData) {
+            const templates = createTemplateOptions(settingsData);
+            const contractType = values.contract_type || 'basic';
+            const selectedTemplate = templates.find(t => t.id === contractType);
+
+            if (selectedTemplate?.content) {
+              const [djData, producerData] = await Promise.all([
+                values.dj_ids && values.dj_ids.length > 0
+                  ? resolveDj(values.dj_ids[0])
+                  : Promise.resolve(null),
+                values.producer_id
+                  ? resolveProducer(values.producer_id)
+                  : Promise.resolve(null)
+              ]);
+
+              const tempEvent = {
+                id: eventId,
+                title: values.title,
+                event_date: values.event_date,
+                location: values.location,
+                cache_value: payload.cache_value,
+                city: values.city,
+                description: values.description,
+                status: values.status,
+                dj_id: values.dj_ids?.[0] || '',
+                producer_id: values.producer_id || '',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                contract_type: contractType,
+              } as any;
+
+              const tempContract = {
+                ...DEFAULT_CONTRACT_FORM,
+                id: eventId,
+                templateId: contractType,
+                content: selectedTemplate.content,
+                value: payload.cache_value,
+              };
+
+              const processedContent = applyTemplatePlaceholders(
+                selectedTemplate.content,
+                tempEvent,
+                tempContract,
+                djData,
+                producerData
+              );
+
+              await supabase
+                .from("events")
+                .update({
+                  contract_content: processedContent,
+                  contract_type: contractType
+                })
+                .eq("id", eventId);
+            }
+          }
+        } catch (contractError) {
+          console.error("Erro ao processar contrato:", contractError);
+        }
+
+        // IMPORTANTE: Processar os múltiplos DJs
+        if (values.dj_ids && Array.isArray(values.dj_ids) && values.dj_ids.length > 0) {
+          try {
+            // 1. Limpar relações anteriores (importante para edição)
+            const { error: deleteError } = await supabase
+              .from('event_djs')
+              .delete()
+              .eq('event_id', eventId);
+
+            if (deleteError) {
+              console.error('Erro ao limpar relações anteriores:', deleteError);
+              // Não vamos bloquear por isso, apenas logamos
+            }
+
+            // 2. Criar novas relações para cada DJ selecionado
+            const eventsDjsRecords = values.dj_ids.map(djId => ({
+              event_id: eventId,
+              dj_id: djId,
+              // Se você tiver cachê por DJ no formulário, adicione aqui:
+              // fee: values.dj_fee_map?.[djId] || null,
+            }));
+
+            const { error: insertError } = await supabase
+              .from('event_djs')
+              .insert(eventsDjsRecords);
+
+            if (insertError) {
+              console.error('Erro ao criar relações DJ-Evento:', insertError);
+              toast({
+                title: "Aviso",
+                description: "Evento salvo, mas houve um problema ao vincular os DJs. Tente editar o evento novamente.",
+                variant: "destructive"
+              });
+            }
+          } catch (djError) {
+            console.error('Erro ao processar DJs:', djError);
+            toast({
+              title: "Aviso",
+              description: "Evento salvo, mas houve um problema ao vincular os DJs.",
+              variant: "destructive"
+            });
+          }
         }
 
         await refetchEvents();
         handleCloseEventModal();
       } catch (error: any) {
         console.error("Erro ao salvar evento:", error);
-        const message = typeof error?.message === "string" ? error.message : "Não foi possível salvar o evento.";
-        toast({ title: "Erro ao salvar evento", description: message, variant: "destructive" });
+        const message = typeof error?.message === "string"
+          ? error.message
+          : "Não foi possível salvar o evento.";
+        toast({
+          title: "Erro ao salvar evento",
+          description: message,
+          variant: "destructive"
+        });
       } finally {
         setEventFormSubmitting(false);
       }

@@ -39,6 +39,7 @@ export interface EventFormValues {
   dj_ids: string[];
   producer_id: string;
   contract_type: string;
+  cache_exempt?: boolean;
 }
 
 interface EventFormDialogProps {
@@ -68,6 +69,7 @@ const defaultValues: EventFormValues = {
   dj_ids: [],
   producer_id: "",
   contract_type: "basic",
+  cache_exempt: false,
 };
 
 const toInputDate = (value?: string | null) => {
@@ -111,6 +113,7 @@ const EventFormDialog = ({
           dj_ids: djIds,
           producer_id: initialData.producer_id,
           contract_type: (initialData as any).contract_type || "basic",
+          cache_exempt: Boolean((initialData as any).cache_exempt) || false,
         });
       } else {
         setValues(defaultValues);
@@ -127,10 +130,18 @@ const EventFormDialog = ({
 
   const readOnly = mode === "view";
 
-  const handleChange = (field: keyof EventFormValues, value: string) => {
+  const handleChange = (field: keyof EventFormValues, value: any) => {
     if (field === "dj_ids") {
       const parsed = JSON.parse(value) as string[];
       setValues((prev) => ({ ...prev, dj_ids: parsed }));
+    } else if (field === "cache_exempt") {
+      const next = Boolean(value);
+      setValues((prev) => ({
+        ...prev,
+        cache_exempt: next,
+        cache_value: next ? "0" : prev.cache_value,
+        commission_rate: next ? "0" : prev.commission_rate,
+      }));
     } else {
       setValues((prev) => ({ ...prev, [field]: value }));
     }
@@ -151,12 +162,14 @@ const EventFormDialog = ({
     if (!values.dj_ids || values.dj_ids.length === 0) nextErrors.dj_ids = "Selecione pelo menos um DJ";
     if (!values.producer_id) nextErrors.producer_id = "Selecione um produtor";
 
-    if (!values.commission_rate.trim()) {
-      nextErrors.commission_rate = "Informe a comissão";
-    } else {
-      const parsedCommission = Number(values.commission_rate);
-      if (Number.isNaN(parsedCommission) || parsedCommission < 0 || parsedCommission > 100) {
-        nextErrors.commission_rate = "Informe uma porcentagem válida";
+    if (!values.cache_exempt) {
+      if (!values.commission_rate.trim()) {
+        nextErrors.commission_rate = "Informe a comissão";
+      } else {
+        const parsedCommission = Number(values.commission_rate);
+        if (Number.isNaN(parsedCommission) || parsedCommission < 0 || parsedCommission > 100) {
+          nextErrors.commission_rate = "Informe uma porcentagem válida";
+        }
       }
     }
 
@@ -278,8 +291,18 @@ const EventFormDialog = ({
                 step="0.01"
                 value={values.cache_value}
                 onChange={(event) => handleChange("cache_value", event.target.value)}
-                disabled={readOnly}
+                disabled={readOnly || Boolean(values.cache_exempt)}
               />
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={Boolean(values.cache_exempt)}
+                  onChange={(e) => handleChange("cache_exempt", e.target.checked)}
+                  disabled={readOnly}
+                  className="rounded border-gray-300"
+                />
+                Cachê isento (sem valor a receber)
+              </label>
             </div>
 
             <div className="grid gap-2">
@@ -292,7 +315,7 @@ const EventFormDialog = ({
                 step="0.01"
                 value={values.commission_rate}
                 onChange={(event) => handleChange("commission_rate", event.target.value)}
-                disabled={readOnly}
+                disabled={readOnly || Boolean(values.cache_exempt)}
                 aria-invalid={Boolean(errors.commission_rate)}
               />
               {errors.commission_rate && (

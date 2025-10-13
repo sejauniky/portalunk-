@@ -411,7 +411,7 @@ const EventsCalendar = ({
                       <p className="text-sm text-muted-foreground">
                         {event.location} • {event.city}
                       </p>
-                      <p className="text-sm text-accent">{dj?.name}</p>
+                      <p className="text-sm text-accent">{Array.isArray(event.dj_names) && event.dj_names.length > 0 ? event.dj_names.join(', ') : (dj?.name || 'DJ não informado')}</p>
                     </div>
                     <div className="flex items-center space-x-2">
                       <p className="text-sm text-accent font-medium">{formattedDate}</p>
@@ -480,7 +480,7 @@ const EventsCalendar = ({
                     <div className="flex items-center space-x-2">
                       <Users className="w-4 h-4 text-muted-foreground" />
                       <div>
-                        <p className="text-sm text-foreground font-medium">{dj?.name || "DJ não informado"}</p>
+                        <p className="text-sm text-foreground font-medium">{Array.isArray(event.dj_names) && event.dj_names.length > 0 ? event.dj_names.join(', ') : (dj?.name || 'DJ não informado')}</p>
                         <p className="text-xs text-muted-foreground">{producer?.name || "Produtor não informado"}</p>
                       </div>
                     </div>

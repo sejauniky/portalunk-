@@ -1,7 +1,7 @@
 import React from 'react';
 import { Icon } from '../../../components/Icon';
 
-const MetricsCard = ({ title, value, change, changeType, icon, color = 'primary', onClick, clickable = false }) => {
+const MetricsCard = ({ title, value, change, changeType, icon, color = 'primary', onClick, clickable = false, valueStyle }) => {
   const getIconColor = (colorType) => {
     const colors = {
       primary: 'text-primary',
@@ -29,7 +29,7 @@ const MetricsCard = ({ title, value, change, changeType, icon, color = 'primary'
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
-          <p className="text-2xl font-bold text-foreground">{value}</p>
+          <p className="text-2xl font-bold text-foreground" style={valueStyle}>{value}</p>
           {clickable && (
             <div className="flex items-center mt-2 text-xs text-primary">
               <Icon name="ArrowRight" size={12} className="mr-1" />

@@ -232,6 +232,12 @@ const ensurePendingPaymentForEvent = async (
   const parsedAmount = parseNumericValue(amountSource);
   const amount = parsedAmount != null && parsedAmount >= 0 ? roundCurrencyValue(parsedAmount) : 0;
 
+  // Skip creating payment if amount is zero or cache is exempt
+  const isExempt = Boolean((eventRecord as any)?.cache_exempt) || Boolean((fallbackRecord as any)?.cache_exempt);
+  if (isExempt || amount <= 0) {
+    return;
+  }
+
   const rawProducerId = eventRecord?.producer_id ?? fallbackRecord?.producer_id ?? null;
   const producerId = rawProducerId ? String(rawProducerId) : null;
 
@@ -285,17 +291,6 @@ const ensurePendingPaymentForEvent = async (
     const msg = formatError(insertError);
     if (isNetworkError(msg)) throw new AppError('Erro de rede ao criar pagamento', ErrorKind.Network, insertError);
     throw new AppError('Erro ao criar pagamento', ErrorKind.Database, insertError);
-  }
-
-  const { error: insertPaymentError } = await supabase.from('payments').insert([insertPayload as {
-    amount: number;
-    event_id?: string;
-    status?: 'pendente' | 'processado' | 'atrasado' | 'pago';
-    producer_id?: string | null;
-    due_date?: string | null;
-  }]);
-  if (insertPaymentError) {
-    throw insertPaymentError;
   }
 };
 
@@ -538,20 +533,10 @@ export const eventService = {
           *,
           dj:djs!events_dj_id_fkey (
             id,
-            name,
             artist_name,
+            name,
+            stage_name,
             email
-          ),
-          event_djs:event_djs (
-            id,
-            dj_id,
-            fee,
-            dj:djs!event_djs_dj_id_fkey (
-              id,
-              name,
-              artist_name,
-              email
-            )
           ),
           producer:producers!events_producer_id_fkey (
             id,
@@ -559,6 +544,19 @@ export const eventService = {
             company_name,
             email,
             profile_id
+          ),
+          event_djs:event_djs (
+            id,
+            dj_id,
+            fee,
+            dj:djs!event_djs_dj_id_fkey (
+              id,
+              artist_name,
+              name,
+              stage_name,
+              email,
+              genre
+            )
           )
         `)
         .order('event_date', { ascending: false });
@@ -875,9 +873,24 @@ export const eventService = {
         if (!error) {
           updateEventColumnCache(allowedColumns);
           if (data?.id) {
-            await syncEventDjRelations(String(data.id), mergedDjIds, feeMap);
-            await ensurePendingPaymentForEvent(data as EventRow, sanitizedRecord as Partial<EventRow>);
-            await syncDjProducerRelationStats(data as EventRow, sanitizedRecord as Partial<EventRow>, mergedDjIds, feeMap);
+            // Sync relations and auxiliary data, but do not fail the main create if these supplementary steps error
+            try {
+              await syncEventDjRelations(String(data.id), mergedDjIds, feeMap);
+            } catch (relErr) {
+              console.error('Failed to sync event-dj relations:', formatError(relErr));
+            }
+
+            try {
+              await ensurePendingPaymentForEvent(data as EventRow, sanitizedRecord as Partial<EventRow>);
+            } catch (payErr) {
+              console.error('Failed to ensure pending payment for event:', formatError(payErr));
+            }
+
+            try {
+              await syncDjProducerRelationStats(data as EventRow, sanitizedRecord as Partial<EventRow>, mergedDjIds, feeMap);
+            } catch (statsErr) {
+              console.error('Failed to sync DJ-producer relation stats (non-fatal):', formatError(statsErr));
+            }
           }
           return { data: data as EnrichedEvent, error: null };
         }
@@ -943,7 +956,11 @@ export const eventService = {
 
         if (!error) {
           updateEventColumnCache(allowedColumns);
-          await syncEventDjRelations(id, mergedDjIds, feeMap);
+          try {
+            await syncEventDjRelations(id, mergedDjIds, feeMap);
+          } catch (relErr) {
+            console.error('Failed to sync event-dj relations on update (non-fatal):', formatError(relErr));
+          }
           return { data: data as EnrichedEvent, error: null };
         }
 

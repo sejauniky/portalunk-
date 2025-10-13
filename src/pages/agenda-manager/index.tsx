@@ -20,11 +20,14 @@ import {
   ClipboardList,
   Plus,
   Music,
+  FileText,
 } from "lucide-react";
 import Input from "@/components/ui/input";
 import { useDJs } from "@/hooks/useDJs";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { eventService } from "@/services/supabaseService";
+import { notesService } from "@/services/notesService";
+import { useAuth } from "@/hooks/use-auth";
 
 // Utility function to combine class names
 const cn = (...classes: (string | boolean | undefined)[]) => {
@@ -140,7 +143,7 @@ const categoryOptions = [
   { value: "set_release", label: "Lançamento" },
 ];
 
-// Funções de inicialização sem dados mocados (limpos)
+// Funç��es de inicialização sem dados mocados (limpos)
 const getInitialPersonalItems = (): AgendaItem[] => [];
 const getInitialContentItems = (): AgendaItem[] => [];
 const getInitialDjs = () => [];
@@ -227,6 +230,109 @@ const ToastContainer = ({ toasts }: { toasts: any[] }) => (
     ))}
   </div>
 );
+
+// --- Seção de Notas ---
+
+type Note = { id: string; user_id: string; title: string; content: string | null; created_at: string; updated_at: string };
+
+const NotesSection = ({
+  notes,
+  onCreate,
+  onUpdate,
+  onDelete,
+}: {
+  notes: Note[];
+  onCreate: (values: { title: string; content: string }) => void;
+  onUpdate: (id: string, values: Partial<Pick<Note, "title" | "content">>) => void;
+  onDelete: (id: string) => void;
+}) => {
+  const { toast } = useToast();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<Note | null>(null);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+
+  const startCreate = () => {
+    setEditing(null);
+    setTitle("");
+    setContent("");
+    setDialogOpen(true);
+  };
+  const startEdit = (note: Note) => {
+    setEditing(note);
+    setTitle(note.title);
+    setContent(note.content || "");
+    setDialogOpen(true);
+  };
+  const submit = () => {
+    if (!title.trim()) {
+      toast({ title: "Informe um título", variant: "destructive" });
+      return;
+    }
+    if (editing) {
+      onUpdate(editing.id, { title: title.trim(), content });
+      toast({ title: "Nota atualizada" });
+    } else {
+      onCreate({ title: title.trim(), content });
+      toast({ title: "Nota criada" });
+    }
+    setDialogOpen(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Minhas Notas</h2>
+        <Button onClick={startCreate} className="gap-2"><Plus className="h-4 w-4" /> Nova nota</Button>
+      </div>
+      <div className="grid gap-3">
+        {notes.map(n => (
+          <Card key={n.id} className="border border-border/60 bg-background/80">
+            <CardContent className="pt-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold">{n.title}</p>
+                  {n.content && <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">{n.content}</p>}
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => startEdit(n)}>Editar</Button>
+                  <Button size="sm" variant="destructive" onClick={() => onDelete(n.id)}>Excluir</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+        {notes.length === 0 && (
+          <div className="rounded-lg border border-dashed border-border/50 p-6 text-center text-sm text-muted-foreground">
+            Nenhuma nota ainda.
+          </div>
+        )}
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{editing ? "Editar Nota" : "Nova Nota"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid gap-2">
+              <Label htmlFor="note-title">Título *</Label>
+              <Input id="note-title" value={title} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="note-content">Conteúdo</Label>
+              <Textarea id="note-content" rows={6} value={content} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={submit}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
 
 // --- Seção da Agenda Pessoal ---
 
@@ -1189,6 +1295,38 @@ const AgendaManager = () => {
   const [kanbanSettings, setKanbanSettings] = useLocalStorageState<KanbanSettingsType>(STORAGE_KEYS.kanban, defaultKanbanSettings);
   
   const [activeTab, setActiveTab] = useState("personal");
+  const { user } = useAuth();
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [notesLoading, setNotesLoading] = useState(false);
+
+  const loadNotes = useCallback(async () => {
+    if (!user?.id) return;
+    setNotesLoading(true);
+    try {
+      const data = await notesService.listByUser(user.id);
+      setNotes(data);
+    } finally {
+      setNotesLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => { loadNotes(); }, [loadNotes]);
+
+  const createNote = useCallback(async (values: { title: string; content: string }) => {
+    if (!user?.id) return;
+    const created = await notesService.create(user.id, values);
+    setNotes(prev => [created, ...prev]);
+  }, [user?.id]);
+
+  const updateNote = useCallback(async (id: string, values: Partial<Pick<Note, 'title' | 'content'>>) => {
+    await notesService.update(id, values);
+    setNotes(prev => prev.map(n => n.id === id ? { ...n, ...values, updated_at: new Date().toISOString() } as Note : n));
+  }, []);
+
+  const deleteNote = useCallback(async (id: string) => {
+    await notesService.remove(id);
+    setNotes(prev => prev.filter(n => n.id !== id));
+  }, []);
 
   // Funções de CRUD
   const createItem = useCallback((payload: Omit<AgendaItem, "id">) => {
@@ -1251,7 +1389,7 @@ const AgendaManager = () => {
       </header>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-2xl">
+        <TabsList className="grid w-full grid-cols-4 max-w-3xl">
           <TabsTrigger value="personal" className="gap-2">
             <CalendarRange className="h-4 w-4" /> Agenda Pessoal
           </TabsTrigger>
@@ -1260,6 +1398,9 @@ const AgendaManager = () => {
           </TabsTrigger>
           <TabsTrigger value="djs" className="gap-2">
             <Music className="h-4 w-4" /> Agenda DJ
+          </TabsTrigger>
+          <TabsTrigger value="notes" className="gap-2">
+            <FileText className="h-4 w-4" /> Notas
           </TabsTrigger>
         </TabsList>
 
@@ -1304,8 +1445,21 @@ const AgendaManager = () => {
         <TabsContent value="djs" className="mt-6">
           <DjAgendaSection djs={djs} contentItems={contentItems} />
         </TabsContent>
+
+        <TabsContent value="notes" className="mt-6">
+          {notesLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Carregando notas...</div>
+          ) : (
+            <NotesSection
+              notes={notes}
+              onCreate={createNote}
+              onUpdate={updateNote}
+              onDelete={deleteNote}
+            />
+          )}
+        </TabsContent>
       </Tabs>
-      
+
       <ToastContainer toasts={toasts} />
     </div>
   );

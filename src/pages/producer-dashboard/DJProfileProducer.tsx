@@ -53,6 +53,9 @@ interface MediaFile {
   file_type: string;
   file_size: number | null;
   created_at: string;
+  file_category?: string | null;
+  description?: string | null;
+  metadata?: Record<string, any> | null;
 }
 
 interface Event {
@@ -138,7 +141,7 @@ const DJProfileProducer = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("media_files")
-        .select("id, file_name, file_url, file_type, file_size, created_at")
+        .select("id, file_name, file_url, file_type, file_size, created_at, file_category, description, metadata")
         .eq("dj_id", djId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -156,36 +159,59 @@ const DJProfileProducer = () => {
       others: [] as MediaFile[],
     };
 
+    const isLikelyVideo = (url?: string | null) => /\.(mp4|webm|ogg|mov|m4v)$/i.test(String(url || ""));
+
     (media ?? []).forEach((file) => {
       const name = (file.file_name ?? "").toLowerCase();
       const url = (file.file_url ?? "").toLowerCase();
-      const isLogo = name.includes("logo");
-      const isPresskit =
-        name.includes("presskit") ||
-        (name.includes("press") && name.includes("kit")) ||
-        url.includes("/presskit/");
-      const isBackdrop =
-        name.includes("backdrop") || name.includes("fundo") || name.includes("background") || name.includes("bg");
+      const category = (file.file_category ?? "").toLowerCase();
+
+      if (category === "logo") {
+        buckets.logos.push(file);
+        return;
+      }
+      if (category === "presskit") {
+        buckets.presskits.push(file);
+        return;
+      }
+      if (category === "backdrop" || category === "background") {
+        buckets.backdrops.push(file);
+        return;
+      }
+
+      // Fallback heuristics only when category is not set
+      const isLogo = name.includes("logo") || url.includes("/logo/");
+      const isPresskit = name.includes("presskit") || (name.includes("press") && name.includes("kit")) || url.includes("/presskit/");
+      const isBackdrop = name.includes("backdrop") || name.includes("fundo") || name.includes("background") || name.includes("bg") || url.includes("/backdrop/") || url.includes("/background/");
 
       if (isLogo) {
         buckets.logos.push(file);
         return;
       }
-
       if (isPresskit) {
         buckets.presskits.push(file);
         return;
       }
-
       if (isBackdrop) {
         buckets.backdrops.push(file);
         return;
       }
 
+      // Ignore tiny placeholder files
+      if (file.file_size && file.file_size <= 0) return;
+
       buckets.others.push(file);
     });
 
-    return buckets;
+    // Remove duplicates by id if any
+    const dedup = (arr: MediaFile[]) => Array.from(new Map(arr.map((f) => [f.id, f])).values());
+
+    return {
+      logos: dedup(buckets.logos),
+      presskits: dedup(buckets.presskits),
+      backdrops: dedup(buckets.backdrops),
+      others: dedup(buckets.others),
+    };
   }, [media]);
 
   const { logos, presskits, backdrops, others } = categorizedMedia;
@@ -227,6 +253,7 @@ const DJProfileProducer = () => {
       {items.map((file) => {
         const isImage = file.file_type?.startsWith?.("image");
         const isAudio = file.file_type?.startsWith?.("audio");
+        const isVideo = file.file_type?.startsWith?.("video") || /\.(mp4|webm|ogg|mov|m4v)$/i.test(String(file.file_url || ""));
         const containerClasses =
           variant === "thumbnail"
             ? "group relative h-20 sm:h-24 lg:h-28 rounded-lg overflow-hidden border border-border"
@@ -239,6 +266,13 @@ const DJProfileProducer = () => {
                 src={file.file_url}
                 alt={file.file_name}
                 className={variant === "thumbnail" ? "h-full w-full object-cover" : "w-full h-full object-cover"}
+              />
+            ) : isVideo ? (
+              <video
+                src={file.file_url}
+                className={variant === "thumbnail" ? "h-full w-full object-cover" : "w-full h-full object-cover"}
+                controls
+                playsInline
               />
             ) : isAudio ? (
               <audio controls className="w-full h-full bg-black">
@@ -543,16 +577,28 @@ const DJProfileProducer = () => {
     .reduce((sum, event) => sum + getEventAmount(event), 0);
 
   const hasHeroBackdropLink = Boolean(profileBackdropImage);
+  const isHeroVideo = /\.(mp4|webm|ogg|mov|m4v)$/i.test(String(profileBackdropImage || ""));
   const heroCardClasses = `relative flex flex-col overflow-hidden rounded-[32px] border border-white/10 bg-black/60 px-6 py-8 shadow-[0_24px_70px_-32px_rgba(33,151,189,0.55)] transition-colors duration-300 pointer-events-auto sm:px-10 sm:py-12${hasHeroBackdropLink ? " cursor-pointer" : ""}`;
   const heroCardContent = (
     <>
       {profileBackdropImage && (
         <div className="absolute inset-0 -z-10 overflow-hidden">
-          <img
-            src={profileBackdropImage}
-            alt="Imagem de fundo do DJ"
-            className="h-full w-full scale-105 object-cover blur-sm"
-          />
+          {isHeroVideo ? (
+            <video
+              src={profileBackdropImage}
+              className="h-full w-full scale-105 object-cover blur-sm"
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+          ) : (
+            <img
+              src={profileBackdropImage}
+              alt="Imagem de fundo do DJ"
+              className="h-full w-full scale-105 object-cover blur-sm"
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/55 to-black/70" />
         </div>
       )}
@@ -636,42 +682,69 @@ const DJProfileProducer = () => {
       </header>
 
       <section className="relative overflow-hidden border-b border-border">
-        <div
-          className="absolute inset-0 opacity-60"
-          style={{
-            backgroundImage: dj.background_image_url
-              ? `url(${dj.background_image_url})`
-              : dj.avatar_url
-              ? `url(${dj.avatar_url})`
-              : undefined,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            filter: "blur(8px)",
-          }}
-        />
+        {/* Blurred banner background */}
+        {dj.background_image_url ? (
+          /\.(mp4|webm|ogg|mov|m4v)$/i.test(String(dj.background_image_url)) ? (
+            <video
+              className="absolute inset-0 h-full w-full object-cover opacity-60 blur-[8px]"
+              src={dj.background_image_url}
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+          ) : (
+            <div
+              className="absolute inset-0 opacity-60"
+              style={{
+                backgroundImage: `url(${dj.background_image_url})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                filter: "blur(8px)",
+              }}
+            />
+          )
+        ) : dj.avatar_url ? (
+          <div
+            className="absolute inset-0 opacity-60"
+            style={{
+              backgroundImage: `url(${dj.avatar_url})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              filter: "blur(8px)",
+            }}
+          />
+        ) : null}
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />
 
         <div className="container relative mx-auto px-6 py-12">
           {profileBackdropImage && (
-            <div 
-              className="absolute inset-0 rounded-[32px] mx-6 overflow-hidden"
-              style={{
-                backgroundImage: `url(${profileBackdropImage})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                opacity: 0.5,
-              }}
-            />
+            <div className="absolute inset-0 rounded-[32px] mx-6 overflow-hidden opacity-50">
+              {isHeroVideo ? (
+                <video
+                  src={profileBackdropImage}
+                  className="h-full w-full object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={profileBackdropImage}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              )}
+            </div>
           )}
           {hasHeroBackdropLink ? (
-            // Use a non-<a> wrapper when the hero content may include its own links to avoid nested anchors
-            // Keep clickable/accessibility semantics by using a div with role="link" and keyboard support
             <div
               role="link"
               tabIndex={0}
               onClick={() => window.open(profileBackdropImage, '_blank', 'noopener')}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.open(profileBackdropImage, '_blank', 'noopener'); } }}
-              title="Abrir imagem de fundo em nova aba"
+              title="Abrir mídia de fundo em nova aba"
               className={heroCardClasses}
             >
               {heroCardContent}
@@ -894,11 +967,10 @@ const DJProfileProducer = () => {
                       <p className="text-muted-foreground">Nenhuma mídia encontrada.</p>
                     ) : (
                       <div className="space-y-6">
-                        {renderMediaSection("Logos", logos, "Nenhum logo enviado ainda.")}
-                        {renderMediaSection("Presskit", presskits, "Nenhuma foto de presskit enviada.", "thumbnail")}
-                        {renderMediaSection("Backdrops", backdrops, "Nenhum backdrop enviado até o momento.")}
-                        {others.length > 0 &&
-                          renderMediaSection("Outros Arquivos", others, "Nenhum outro arquivo disponível.")}
+                        {logos.length > 0 && renderMediaSection("Logos", logos, "Nenhum logo enviado ainda.")}
+                        {presskits.length > 0 && renderMediaSection("Presskit", presskits, "Nenhuma foto de presskit enviada.", "thumbnail")}
+                        {backdrops.length > 0 && renderMediaSection("Backdrops", backdrops, "Nenhum backdrop enviado até o momento.")}
+                        {others.length > 0 && renderMediaSection("Outros Arquivos", others, "Nenhum outro arquivo disponível.")}
                       </div>
                     )}
                   </CardContent>

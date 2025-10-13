@@ -178,7 +178,7 @@ export function Sidebar({ className }: SidebarProps) {
                 onClick={() => setIsMobileMenuOpen(false)}
                 style={{
                   animationDelay: `${index * 50}ms`,
-                  ...(item.href === '/finances' ? { backgroundColor: 'rgba(83, 15, 181, 0)' } : {}),
+                  ...(item.href === '/finances' ? { backgroundColor: 'rgba(13, 90, 209, 0.54)' } : {}),
                 }}
                 className={cn(
                   "w-full justify-start text-left font-normal transition-all duration-300",

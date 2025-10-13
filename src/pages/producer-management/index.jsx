@@ -57,10 +57,10 @@ const ProducerCard = ({ producer, eventCount, onView, onEdit, onChangePassword, 
 
             <div className="min-w-0">
               <h3 className="text-xl font-semibold leading-tight text-white truncate">
-                {producer?.company_name || producer?.name || 'Produtor'}
+                {producer?.name || producer?.company_name || 'Produtor'}
               </h3>
               <p className="mt-1 text-sm text-slate-300/80 truncate">
-                {producer?.name && producer?.company_name ? producer?.name : producer?.email || producer?.company_name || '-'}
+                {producer?.company_name || producer?.email || '-'}
               </p>
             </div>
           </div>

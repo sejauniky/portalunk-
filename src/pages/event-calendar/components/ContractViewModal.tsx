@@ -15,6 +15,8 @@ interface ContractViewModalProps {
   eventName: string;
   signatureStatus: string;
   onSign?: () => void;
+  eventId?: string;
+  djId?: string;
 }
 
 export const ContractViewModal = ({
@@ -25,6 +27,8 @@ export const ContractViewModal = ({
   eventName,
   signatureStatus,
   onSign,
+  eventId,
+  djId,
 }: ContractViewModalProps) => {
   const [isSigning, setIsSigning] = useState(false);
   const [agree, setAgree] = useState(false);
@@ -32,28 +36,103 @@ export const ContractViewModal = ({
   const handleSign = async () => {
     setIsSigning(true);
     try {
-      const { error } = await supabase
-        .from("contract_instances")
-        .update({ signature_status: "signed", signed_at: new Date().toISOString() })
-        .eq("id", contractId);
+      let resolvedContractId = contractId && contractId.trim().length > 0 ? contractId : "";
 
-      if (error) throw error;
+      if (!resolvedContractId && eventId && djId) {
+        // Try to find existing instance
+        const existing = await supabase
+          .from("contract_instances")
+          .select("id")
+          .eq("event_id", eventId)
+          .eq("dj_id", djId)
+          .maybeSingle();
 
-      try {
-        const { data: userData } = await supabase.auth.getUser();
-        const signerId = userData?.user?.id ?? '';
-        const nowIso = new Date().toISOString();
-        await supabase.from("digital_signatures").insert({
-          contract_instance_id: contractId,
-          signer_id: signerId,
-          signer_type: "producer",
-          signer_name: userData?.user?.email || "Produtor",
-          signature_data: `accepted_terms_${nowIso}`,
-          signature_hash: (crypto as any)?.randomUUID ? (crypto as any).randomUUID() : Math.random().toString(36).slice(2),
-          signed_at: nowIso,
-        });
-      } catch (_) {
-        // best-effort audit trail; ignore errors here
+        if (existing?.data?.id) {
+          resolvedContractId = String(existing.data.id);
+        } else {
+          // Fetch event info
+          const { data: evInfo } = await supabase
+            .from("events")
+            .select("contract_type, producer_id, cache_value")
+            .eq("id", eventId)
+            .maybeSingle();
+
+          const contractType = (evInfo as any)?.contract_type || "basic";
+          const ownerProducerId = (evInfo as any)?.producer_id || null;
+          const eventCache = Number((evInfo as any)?.cache_value) || 0;
+
+          // Attempt to create via edge function first
+          let created = false;
+          if (ownerProducerId) {
+            let invokeOk = false;
+            try {
+              const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000));
+              const res = await Promise.race([
+                supabase.functions.invoke('create-event-contracts', {
+                  body: { eventId, djIds: [djId], contractType, producerId: ownerProducerId }
+                }),
+                timeout,
+              ]) as any;
+              if (!res?.error) invokeOk = true;
+            } catch (_) {
+              invokeOk = false;
+            }
+            if (invokeOk) {
+              const retry = await supabase
+                .from("contract_instances")
+                .select("id")
+                .eq("event_id", eventId)
+                .eq("dj_id", djId)
+                .maybeSingle();
+              if (retry?.data?.id) {
+                resolvedContractId = String(retry.data.id);
+                created = true;
+              }
+            }
+
+            // Fallback: direct insert if edge function unavailable
+            if (!created) {
+              // Resolve per-DJ fee if available
+              let contractValue = eventCache;
+              try {
+                const { data: ed } = await supabase
+                  .from('event_djs')
+                  .select('fee')
+                  .eq('event_id', eventId)
+                  .eq('dj_id', djId)
+                  .maybeSingle();
+                if (ed?.fee != null) contractValue = Number(ed.fee) || contractValue;
+              } catch {}
+
+              const nowIso = new Date().toISOString();
+              // Do NOT write directly from client to protected tables (RLS).
+              // Leave contract creation to edge function only.
+            }
+          }
+        }
+      }
+
+      if (!resolvedContractId) {
+        throw new Error('Contrato não disponível para assinatura no momento.');
+      }
+
+      // Call secure edge function to record signature and mark as signed
+      const { data: userData } = await supabase.auth.getUser();
+      const nowIso = new Date().toISOString();
+      const signerName = userData?.user?.email || "Produtor";
+
+      const resp = await supabase.functions.invoke('process-digital-signature', {
+        body: {
+          contractInstanceId: resolvedContractId,
+          signatureData: `accepted_terms_${nowIso}`,
+          signerName,
+          signerType: 'producer',
+          location: null,
+        },
+      });
+
+      if ((resp as any)?.error) {
+        throw new Error((resp as any)?.error?.message || 'Falha ao processar assinatura');
       }
 
       toast({
@@ -106,9 +185,9 @@ export const ContractViewModal = ({
                   Li e concordo com os termos do contrato
                 </label>
               </div>
-              <Button onClick={handleSign} disabled={isSigning || !agree || !contractId} className="gap-2">
+              <Button onClick={handleSign} disabled={isSigning || !agree} className="gap-2">
                 <Check className="h-4 w-4" />
-                {isSigning ? "Assinando..." : "Li e concordo"}
+                {isSigning ? "Salvando..." : "Salvar"}
               </Button>
             </>
           )}

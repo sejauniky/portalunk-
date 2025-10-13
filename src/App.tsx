@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Router, Route, Switch, useLocation } from "wouter";
+import { useHashLocation } from "wouter/use-hash-location";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useAuth } from "@/hooks/use-auth";
@@ -146,7 +147,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <PWAInstallPrompt />
-        <Router>
+        <Router hook={useHashLocation}>
           <AppRoutes />
         </Router>
       </TooltipProvider>

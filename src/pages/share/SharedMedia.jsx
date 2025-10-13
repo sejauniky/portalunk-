@@ -48,6 +48,31 @@ const SharedMedia = () => {
         if (error) throw error;
 
         if (!data) {
+          // Fallback para links legados armazenados no Storage
+          try {
+            const { data: fileData, error: downloadError } = await supabase
+              .storage
+              .from('shared-links')
+              .download(`links/${token}.json`);
+
+            if (!downloadError && fileData) {
+              const text = await fileData.text();
+              const legacy = JSON.parse(text);
+              if (legacy && legacy.djId && legacy.password_hash) {
+                setMeta({
+                  djId: legacy.djId,
+                  djName: legacy.djName || null,
+                  password_hash: legacy.password_hash,
+                  share_id: null,
+                });
+                setChecking(false);
+                return;
+              }
+            }
+          } catch (fallbackErr) {
+            console.warn('Legacy share fallback failed', fallbackErr);
+          }
+
           setError('Link inválido ou não encontrado');
           setChecking(false);
           return;

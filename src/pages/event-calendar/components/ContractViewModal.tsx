@@ -41,12 +41,17 @@ export const ContractViewModal = ({
 
       try {
         const { data: userData } = await supabase.auth.getUser();
+        const signerId = userData?.user?.id ?? '';
+        const nowIso = new Date().toISOString();
         await supabase.from("digital_signatures").insert({
           contract_instance_id: contractId,
-          signer_id: userData?.user?.id ?? null,
+          signer_id: signerId,
           signer_type: "producer",
-          signed_at: new Date().toISOString(),
-        } as any);
+          signer_name: userData?.user?.email || "Produtor",
+          signature_data: `accepted_terms_${nowIso}`,
+          signature_hash: (crypto as any)?.randomUUID ? (crypto as any).randomUUID() : Math.random().toString(36).slice(2),
+          signed_at: nowIso,
+        });
       } catch (_) {
         // best-effort audit trail; ignore errors here
       }

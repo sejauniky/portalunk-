@@ -89,30 +89,66 @@ const formatCurrency = (value) => {
 const resolveDjNames = (event) => {
   // Prefer explicit array provided by calendar mapping
   if (Array.isArray(event?.dj_names) && event.dj_names.length > 0) {
-    return Array.from(new Set(event.dj_names.filter(Boolean))).join(', ');
+    return Array.from(new Set(event.dj_names.filter(Boolean).map((s) => `${s}`.trim()))).join(', ');
   }
 
-  const names = [];
-  // Primary DJ object on event
+  // Helper to extract a display name from various shapes
+  const getDjDisplayName = (dj) => {
+    if (!dj) return '';
+    if (typeof dj === 'string') return dj.trim();
+    if (typeof dj === 'object') {
+      const n = dj.artist_name || dj.name || dj.stage_name || dj.real_name || dj.email || dj.username;
+      return (n ? `${n}`.trim() : '');
+    }
+    return '';
+  };
+
+  const seenIds = new Set();
+  const seenNames = new Set(); // normalized names to avoid duplicates with different fields
+  const collected = [];
+
+  // Primary DJ (may be an id, object, or name)
   if (event?.dj) {
-    const n = event.dj.artist_name || event.dj.name || event.dj.stage_name || event.dj.email;
-    if (n) names.push(n);
+    const id = typeof event.dj === 'object' ? event.dj.id || null : null;
+    const name = getDjDisplayName(event.dj).toLowerCase();
+    if ((id && !seenIds.has(id)) || (name && !seenNames.has(name))) {
+      if (id) seenIds.add(id);
+      if (name) seenNames.add(name);
+      collected.push(getDjDisplayName(event.dj));
+    }
   }
+
   // Relations from event_djs
   if (Array.isArray(event?.event_djs)) {
     event.event_djs.forEach((rel) => {
-      const d = rel?.dj || null;
-      const n = d?.artist_name || d?.name || d?.stage_name || d?.email;
-      if (n) names.push(n);
+      const d = rel?.dj || rel; // sometimes the relation may be the dj itself
+      const id = d && typeof d === 'object' ? d.id || rel?.dj_id || null : null;
+      const name = getDjDisplayName(d).toLowerCase();
+      if ((id && !seenIds.has(id)) || (name && !seenNames.has(name))) {
+        if (id) seenIds.add(id);
+        if (name) seenNames.add(name);
+        const display = getDjDisplayName(d);
+        if (display) collected.push(display);
+      }
     });
   }
-  // Legacy arrays
+
+  // Legacy arrays: could be ids, objects, or strings
   if (Array.isArray(event?.djs)) {
-    event.djs.forEach((n) => { if (n) names.push(n); });
+    event.djs.forEach((dj) => {
+      const id = dj && typeof dj === 'object' ? dj.id || dj.dj_id || null : null;
+      const name = getDjDisplayName(dj).toLowerCase();
+      if ((id && !seenIds.has(id)) || (name && !seenNames.has(name))) {
+        if (id) seenIds.add(id);
+        if (name) seenNames.add(name);
+        const display = getDjDisplayName(dj);
+        if (display) collected.push(display);
+      }
+    });
   }
 
-  const unique = Array.from(new Set(names.filter(Boolean)));
-  return unique.length > 0 ? unique.join(', ') : 'DJ não encontrado';
+  const result = collected.filter(Boolean).map((s) => `${s}`.trim()).filter((s) => s.length > 0);
+  return result.length > 0 ? result.join(', ') : 'DJ não encontrado';
 };
 
 const StatusBadge = ({ status }) => (

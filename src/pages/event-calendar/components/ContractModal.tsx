@@ -76,28 +76,34 @@ interface EventContractModalProps {
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number.isFinite(value) ? value : 0);
 
+const formatLocalDate = (value?: string | null) => {
+  if (!value) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split('-').map((v) => Number(v));
+    const local = new Date(y, m - 1, d);
+    return local.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
+const formatLocalTime = (value?: string | null) => {
+  if (!value) return '';
+  if (/^\d{2}:\d{2}(:\d{2})?$/.test(value)) return value.slice(0,5);
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '';
+  return parsed.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+};
+
 const resolveEventDate = (event: CalendarEvent | null) => {
   if (!event?.event_date) {
-    return { date: "", time: "" };
+    return { date: '', time: '' };
   }
-
-  const parsed = new Date(event.event_date);
-  if (Number.isNaN(parsed.getTime())) {
-    return { date: event.event_date, time: "" };
-  }
-
-  const date = parsed.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-
-  const time = parsed.toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  return { date, time };
+  return {
+    date: formatLocalDate(event.event_date),
+    time: formatLocalTime((event as any)?.event_time || event.event_date),
+  };
 };
 
 export const EventContractModal: React.FC<EventContractModalProps> = ({
@@ -126,9 +132,9 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(value) => (value ? undefined : onClose())}>
-      <DialogContent className="w-full max-w-5xl border border-border bg-background/95 p-0 text-foreground shadow-glass transition-all sm:rounded-2xl [&>button]:hidden">
-        <div className="flex h-full max-h-[90vh] flex-col">
-          <header className="flex items-start justify-between gap-4 border-b border-border bg-background/95 px-6 py-5">
+      <DialogContent className="w-full max-w-6xl border border-border bg-background/95 p-0 text-foreground shadow-glass transition-all sm:rounded-xl [&>button]:hidden">
+        <div className="flex h-full max-h-[657px] flex-col pr-[199px] mr-[-4px]">
+          <header className="flex items-start justify-between gap-4 border-b border-border bg-background/95 py-[20px] pl-[30px] pr-[104px] w-[829px] mr-[9px]">
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <FileText className="h-5 w-5" />
@@ -185,7 +191,7 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
             </div>
           ) : (
             <ScrollArea className="flex-1">
-              <div className="space-y-6 px-6 py-6">
+              <div className="space-y-6 text-[11px] w-[1199px] h-[539.3px] max-w-[849px] min-h-[22px] mr-[99px] pr-[16px] pl-[29px] pt-[17px] pb-[19px]">
                 <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                   <div className="rounded-xl border border-border bg-muted/10 p-4">
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -193,8 +199,7 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
                       Data do evento
                     </div>
                     <p className="mt-2 text-lg font-semibold">{formattedDate || "Data não informada"}</p>
-                    {formattedTime && <p className="text-sm text-muted-foreground">Às {formattedTime}</p>}
-                  </div>
+                                      </div>
 
                   <div className="rounded-xl border border-border bg-muted/10 p-4">
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -207,9 +212,12 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
                   <div className="rounded-xl border border-border bg-muted/10 p-4">
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                       <Users className="h-4 w-4" />
-                      DJ
+                      DJs
                     </div>
-                    <p className="mt-2 text-lg font-semibold">{dj?.name || dj?.artist_name || dj?.stage_name || "DJ não informado"}</p>
+                    <p className="mt-2 text-lg font-semibold">{Array.isArray((event as any)?.dj_names) && (event as any).dj_names.length
+                      ? (event as any).dj_names.join(', ')
+                      : (dj?.name || dj?.artist_name || dj?.stage_name || "DJ não informado")}
+                    </p>
                   </div>
                 </section>
 
@@ -243,7 +251,7 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
                   </div>
 
                   <div className="mt-4">
-                    <Textarea value={contract.content} onChange={(e) => onChange({ content: e.target.value })} readOnly={!isEditing} />
+                    <Textarea className="min-h-[55vh]" value={contract.content} onChange={(e) => onChange({ content: e.target.value })} readOnly={!isEditing} />
                   </div>
                 </section>
               </div>

@@ -118,13 +118,39 @@ const applyTemplatePlaceholders = (
   producer: CalendarProducer | null,
 ): string => {
   if (!template) return "";
-  return template
-    .replace(/{DJ_NAME}/g, dj?.name ?? "DJ")
-    .replace(/{EVENT_DATE}/g, formatDateLabel(event.event_date))
-    .replace(/{EVENT_NAME}/g, event.title ?? "Evento")
-    .replace(/{VENUE}/g, event.location ?? "")
-    .replace(/{AMOUNT}/g, formatCurrencyLabel(ensureCurrencyNumber(contract.value)))
-    .replace(/{PRODUCER_NAME}/g, producer?.name ?? "Produtor");
+
+  const djNamesArr = Array.isArray((event as any)?.dj_names) && (event as any).dj_names.length
+    ? (event as any).dj_names
+    : (dj?.name ? [dj.name] : []);
+  const djNames = djNamesArr.filter(Boolean).map((s) => `${s}`.trim()).join(', ');
+  const firstDj = djNamesArr[0] || dj?.name || 'DJ';
+
+  const eventAddress = [String(event.location ?? ''), String((event as any).city ?? '')]
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+    .join(', ');
+
+  const replacements: Record<string, string> = {
+    '{DJ_NAME}': String(firstDj || 'DJ'),
+    '{DJ_NAMES}': String(djNames || firstDj || 'DJ'),
+    '{EVENT_DATE}': formatDateLabel(event.event_date),
+    '{EVENT_NAME}': String(event.title ?? 'Evento'),
+    '{VENUE}': String(event.location ?? ''),
+    '{CITY}': String((event as any).city ?? ''),
+    '{ENDERECO}': eventAddress,
+    '{AMOUNT}': formatCurrencyLabel(ensureCurrencyNumber(contract.value)),
+    '{PRODUCER_NAME}': String(producer?.name ?? 'Produtor'),
+    '{PRODUCER_COMPANY}': String((producer as any)?.company_name ?? ''),
+    '{CPF_CNPJ}': String((producer as any)?.cnpj ?? ''),
+    '{COMMISSION_RATE}': (event as any)?.commission_rate != null ? `${(event as any).commission_rate}%` : '',
+    '{STATUS}': String(event.status ?? ''),
+  };
+
+  let out = template;
+  Object.entries(replacements).forEach(([key, val]) => {
+    out = out.replace(new RegExp(key, 'g'), val);
+  });
+  return out;
 };
 
 const buildSpecialRequirements = (contract: EventContractFormState): string =>
@@ -200,11 +226,29 @@ const EventCalendar = () => {
           : [];
         const combinedDJs = [event?.dj, ...extraDJs].filter(Boolean);
 
-        const djIds = combinedDJs
+        // Deduplicate DJs by id first, then by normalized name
+        const seenIds = new Set<string>();
+        const seenNames = new Set<string>();
+        const uniqueDJs = [] as any[];
+        combinedDJs.forEach((dj: any) => {
+          if (!dj) return;
+          const id = dj?.id ? String(dj.id) : null;
+          const name = (dj?.artist_name || dj?.name || dj?.stage_name || dj?.real_name || dj?.email || '')
+            .toString()
+            .trim()
+            .toLowerCase();
+          if ((id && !seenIds.has(id)) || (name && !seenNames.has(name))) {
+            if (id) seenIds.add(id);
+            if (name) seenNames.add(name);
+            uniqueDJs.push(dj);
+          }
+        });
+
+        const djIds = uniqueDJs
           .map((dj: any) => (dj?.id ? String(dj.id) : null))
           .filter((id): id is string => Boolean(id));
 
-        const djNames = combinedDJs
+        const djNames = uniqueDJs
           .map((dj: any) => dj?.artist_name || dj?.name || dj?.stage_name)
           .filter(Boolean);
 
@@ -317,7 +361,7 @@ const EventCalendar = () => {
 
       const { data, error } = await supabase
         .from("producers")
-        .select("id, name, company_name, email")
+        .select("id, name, company_name, email, cnpj, address, business_address, zip_code")
         .eq("id", producerId)
         .maybeSingle();
 
@@ -330,7 +374,11 @@ const EventCalendar = () => {
         name: data.name || data.company_name || data.email || "Produtor",
         email: data.email ?? "",
         company_name: data.company_name ?? null,
-      };
+        cnpj: (data as any)?.cnpj ?? null,
+        address: (data as any)?.address ?? null,
+        business_address: (data as any)?.business_address ?? null,
+        zip_code: (data as any)?.zip_code ?? null,
+      } as any;
     },
     [calendarProducers],
   );
@@ -537,7 +585,7 @@ const EventCalendar = () => {
             const selectedTemplate = templates.find(t => t.id === contractType);
 
             if (selectedTemplate?.content) {
-              const [djData, producerData] = await Promise.all([
+              const [firstDj, producerData] = await Promise.all([
                 values.dj_ids && values.dj_ids.length > 0
                   ? resolveDj(values.dj_ids[0])
                   : Promise.resolve(null),
@@ -545,6 +593,10 @@ const EventCalendar = () => {
                   ? resolveProducer(values.producer_id)
                   : Promise.resolve(null)
               ]);
+
+              const selectedDjNames = (values.dj_ids || [])
+                .map((id) => calendarDjs.find((d) => d.id === id)?.name)
+                .filter(Boolean) as string[];
 
               const tempEvent = {
                 id: eventId,
@@ -556,6 +608,7 @@ const EventCalendar = () => {
                 description: values.description,
                 status: values.status,
                 dj_id: values.dj_ids?.[0] || '',
+                dj_names: selectedDjNames,
                 producer_id: values.producer_id || '',
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
@@ -574,7 +627,7 @@ const EventCalendar = () => {
                 selectedTemplate.content,
                 tempEvent,
                 tempContract,
-                djData,
+                firstDj,
                 producerData
               );
 
@@ -591,7 +644,7 @@ const EventCalendar = () => {
           console.error("Erro ao processar contrato:", contractError);
         }
 
-        // IMPORTANTE: Processar os múltiplos DJs
+        // IMPORTANTE: Processar os múltiplos DJs e criar contratos por DJ
         if (values.dj_ids && Array.isArray(values.dj_ids) && values.dj_ids.length > 0) {
           try {
             // 1. Limpar relações anteriores (importante para edição)
@@ -601,16 +654,13 @@ const EventCalendar = () => {
               .eq('event_id', eventId);
 
             if (deleteError) {
-              console.error('Erro ao limpar relações anteriores:', deleteError);
-              // Não vamos bloquear por isso, apenas logamos
+              console.warn('Erro ao limpar relações anteriores:', deleteError);
             }
 
             // 2. Criar novas relações para cada DJ selecionado
             const eventsDjsRecords = values.dj_ids.map(djId => ({
               event_id: eventId,
               dj_id: djId,
-              // Se você tiver cachê por DJ no formulário, adicione aqui:
-              // fee: values.dj_fee_map?.[djId] || null,
             }));
 
             const { error: insertError } = await supabase
@@ -621,9 +671,28 @@ const EventCalendar = () => {
               console.error('Erro ao criar relações DJ-Evento:', insertError);
               toast({
                 title: "Aviso",
-                description: "Evento salvo, mas houve um problema ao vincular os DJs. Tente editar o evento novamente.",
+                description: "Evento salvo, mas houve um problema ao vincular os DJs.",
                 variant: "destructive"
               });
+            } else {
+              // 3. Invocar a função para criar instâncias de contrato para TODOS os DJs selecionados
+              try {
+                await supabase.functions.invoke('create-event-contracts', {
+                  body: {
+                    eventId,
+                    djIds: values.dj_ids,
+                    contractType: values.contract_type || 'basic',
+                    producerId: values.producer_id,
+                  },
+                });
+              } catch (fnErr) {
+                console.error('Erro ao criar contratos por DJ:', fnErr);
+                toast({
+                  title: 'Contrato parcial',
+                  description: 'Evento salvo, mas houve erro ao criar contratos para todos os DJs.',
+                  variant: 'destructive',
+                });
+              }
             }
           } catch (djError) {
             console.error('Erro ao processar DJs:', djError);

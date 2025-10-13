@@ -145,9 +145,9 @@ const ProducerCard = ({ producer, eventCount, onView, onEdit, onChangePassword, 
 };
 
 const DetailRow = ({ label, value }) => (
-  <div className="flex justify-between py-2 border-b border-border/60">
-    <span className="text-sm text-muted-foreground pl-2 sm:pl-0">{label}</span>
-    <span className="text-sm text-foreground max-w-[60%] text-right truncate pr-4 sm:pr-0 ml-0.5">{value || '-'}</span>
+  <div className="flex justify-between py-2 border-b border-border/60 gap-3">
+    <span className="text-sm text-muted-foreground pl-2 sm:pl-0 whitespace-nowrap">{label}</span>
+    <span className="text-sm text-foreground ml-0.5 pr-4 sm:pr-0 break-words whitespace-normal flex-1 text-left">{value || '-'}</span>
   </div>
 );
 
@@ -649,7 +649,7 @@ const ProducerManagement = () => {
         {/* Details Modal */}
         {selected && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[9999] p-4">
-            <div className="bg-[#151516]/80 border border-[rgba(130,90,195,1)] rounded-xl w-full max-w-lg p-6 shadow-[1px_1px_23px_0_rgba(17,21,119,1)]">
+            <div className="bg-[#151516]/80 border border-[rgba(130,90,195,1)] rounded-xl w-full max-w-2xl p-6 shadow-[1px_1px_23px_0_rgba(17,21,119,1)]">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-foreground">Detalhes do Produtor</h2>
                 <Button variant="ghost" size="icon" onClick={() => setSelected(null)}><Icon name="X" size={18} /></Button>

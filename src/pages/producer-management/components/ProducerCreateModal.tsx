@@ -15,7 +15,7 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
   const [formData, setFormData] = useState({
     contact_person: '',
     email_prefix: '',
-    phone: '',
+    contact_phone: '',
     company_name: '',
     cnpj: '',
     address: '',
@@ -158,7 +158,7 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
           id: userId,
           full_name: formData.contact_person,
           email: supabaseEmail,
-          phone: formData.phone || null,
+          phone: formData.contact_phone || null,
           avatar_url: avatarUrl,
           role: 'producer'
         });
@@ -180,7 +180,7 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
         .insert({
           id: userId,
           contact_person: formData.contact_person,
-          contact_phone: formData.phone || null,
+          contact_phone: formData.contact_phone || null,
           company_name: formData.company_name || null,
           cnpj: formData.cnpj || null,
           address: formData.address || null,
@@ -204,7 +204,7 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
       setFormData({
         contact_person: '',
         email_prefix: '',
-        phone: '',
+        contact_phone: '',
         company_name: '',
         cnpj: '',
         address: '',
@@ -317,8 +317,8 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
 
             <Input
               label="Telefone"
-              value={formData.phone}
-              onChange={(e) => handleChange('phone', e.target.value)}
+              value={formData.contact_phone}
+              onChange={(e) => handleChange('contact_phone', e.target.value)}
               placeholder="(11) 99999-9999"
               wrapperClassName="w-full"
             />

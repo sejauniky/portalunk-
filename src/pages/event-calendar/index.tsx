@@ -918,6 +918,35 @@ const EventCalendar = () => {
         return;
       }
 
+      // Ensure there is at least one contract instance for this event and DJs
+      try {
+        const { data: existing } = await supabase
+          .from('contract_instances')
+          .select('id')
+          .eq('event_id', contractEvent.id)
+          .limit(1);
+
+        if (!existing || existing.length === 0) {
+          const djIds = (contractEvent as any)?.dj_ids && Array.isArray((contractEvent as any).dj_ids) && (contractEvent as any).dj_ids.length
+            ? (contractEvent as any).dj_ids
+            : ((contractEvent as any)?.dj_id ? [(contractEvent as any).dj_id] : []);
+          const producerId = (contractEvent as any)?.producer_id || '';
+
+          if (djIds.length > 0 && producerId) {
+            await supabase.functions.invoke('create-event-contracts', {
+              body: {
+                eventId: contractEvent.id,
+                djIds,
+                contractType: contractState.templateId,
+                producerId,
+              },
+            });
+          }
+        }
+      } catch (fnErr) {
+        console.warn('Falha ao garantir instâncias de contrato (não fatal):', fnErr);
+      }
+
       const { error } = await supabase
         .from("events")
         .update({ contract_attached: true })

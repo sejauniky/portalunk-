@@ -335,141 +335,210 @@ const PersonalAgendaSection = ({
 
   return (
     <div className="space-y-6">
-      <Card className="h-full">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between text-lg">
-            <div className="flex items-center gap-2">
-              <CalendarRange className="h-5 w-5" />
-              <span>{monthLabel}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={goPrevMonth}>Anterior</Button>
-              <Button size="sm" variant="outline" onClick={goNextMonth}>Pr��ximo</Button>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-7 text-xs font-semibold text-muted-foreground">
-            {['SEG','TER','QUA','QUI','SEX','SAB','DOM'].map((d) => (
-              <div key={d} className="border border-border/60 p-2 text-center bg-muted/30">{d}</div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 border-l border-b border-border/60">
-            {buildMonthGrid.map((cell, idx) => {
-              const dayItems = getItemsFor(cell.date);
-              const isSelected = isSameDay(cell.date, selectedDate);
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => { setSelectedDate(cell.date); }}
-                  className={cn(
-                    "relative h-28 w-full border-t border-r border-border/60 p-2 text-left overflow-hidden",
-                    !cell.inCurrent && "bg-muted/20 text-muted-foreground",
-                    isSelected && "ring-2 ring-primary z-10"
-                  )}
-                >
-                  <div className="text-xs font-semibold">{cell.date.getDate()}</div>
-                  <div className="mt-1 space-y-1">
-                    {dayItems.slice(0, 3).map((it) => (
-                      <div key={it.id} className="truncate text-[11px]">
-                        <span className="mr-1 text-muted-foreground">{it.time || ""}</span>
-                        {it.title}
-                      </div>
-                    ))}
-                    {dayItems.length > 3 && (
-                      <div className="text-[11px] text-muted-foreground">+{dayItems.length - 3} mais</div>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-4">
-            <Button onClick={() => setDialogOpen(true)} className="w-full" style={{ backgroundColor: 'rgba(158, 60, 251, 0.37)' }}>
-              Novo Compromisso
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Controles de visualização e ação rápida */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-1 rounded-lg border border-border p-1 bg-background">
+          <Button size="sm" variant={viewMode === 'calendar' ? 'default' : 'ghost'} onClick={() => setViewMode('calendar')}>Calendário</Button>
+          <Button size="sm" variant={viewMode === 'list' ? 'default' : 'ghost'} onClick={() => setViewMode('list')}>Lista</Button>
+        </div>
+        <Button size="sm" onClick={() => setDialogOpen(true)} className="gap-2">
+          <Plus className="h-4 w-4" /> Adicionar evento
+        </Button>
+      </div>
 
-      <Card className="h-full">
-        <CardHeader className="flex flex-col gap-2">
-          <CardTitle className="flex items-center justify-between text-lg">
-            <span>
-              Agenda do dia {formatDate(selectedDate, "dd 'de' MMMM")}
-            </span>
-            <Badge variant="outline" className="gap-1">
-              <Clock className="h-3.5 w-3.5" />
-              {eventsForDay.length} itens
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {eventsForDay.map((item) => (
-              <div key={item.id} className="rounded-xl border border-border/60 bg-muted/30 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold">{item.title}</p>
-                    {item.description && (
-                      <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {item.time && (
-                      <Badge variant="secondary" className="gap-1">
-                        <Clock className="h-3.5 w-3.5" />
-                        {item.time}
-                      </Badge>
-                    )}
-                    <Badge
+      {viewMode === 'calendar' ? (
+        <>
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center gap-2">
+                  <CalendarRange className="h-5 w-5" />
+                  <span>{monthLabel}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={goPrevMonth}>Anterior</Button>
+                  <Button size="sm" variant="outline" onClick={goNextMonth}>Próximo</Button>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-7 text-xs font-semibold text-muted-foreground">
+                {['SEG','TER','QUA','QUI','SEX','SAB','DOM'].map((d) => (
+                  <div key={d} className="border border-border/60 p-2 text-center bg-muted/30">{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 border-l border-b border-border/60">
+                {buildMonthGrid.map((cell, idx) => {
+                  const dayItems = getItemsFor(cell.date);
+                  const isSelected = isSameDay(cell.date, selectedDate);
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => { setSelectedDate(cell.date); }}
                       className={cn(
-                        "text-xs",
-                        item.priority === "high" && "bg-red-500",
-                        item.priority === "medium" && "bg-amber-500",
-                        item.priority === "low" && "bg-blue-500"
+                        "relative h-28 w-full border-t border-r border-border/60 p-2 text-left overflow-hidden",
+                        !cell.inCurrent && "bg-muted/20 text-muted-foreground",
+                        isSelected && "ring-2 ring-primary z-10"
                       )}
                     >
-                      {priorityOptions.find((opt) => opt.value === item.priority)?.label}
-                    </Badge>
+                      <div className="text-xs font-semibold">{cell.date.getDate()}</div>
+                      <div className="mt-1 space-y-1">
+                        {dayItems.slice(0, 3).map((it) => (
+                          <div key={it.id} className="truncate text-[11px]">
+                            <span className="mr-1 text-muted-foreground">{it.time || ""}</span>
+                            {it.title}
+                          </div>
+                        ))}
+                        {dayItems.length > 3 && (
+                          <div className="text-[11px] text-muted-foreground">+{dayItems.length - 3} mais</div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="h-full">
+            <CardHeader className="flex flex-col gap-2">
+              <CardTitle className="flex items-center justify-between text-lg">
+                <span>
+                  Agenda do dia {formatDate(selectedDate, "dd 'de' MMMM")}
+                </span>
+                <Badge variant="outline" className="gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  {eventsForDay.length} itens
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {eventsForDay.map((item) => (
+                  <div key={item.id} className="rounded-xl border border-border/60 bg-muted/30 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold">{item.title}</p>
+                        {item.description && (
+                          <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {item.time && (
+                          <Badge variant="secondary" className="gap-1">
+                            <Clock className="h-3.5 w-3.5" />
+                            {item.time}
+                          </Badge>
+                        )}
+                        <Badge
+                          className={cn(
+                            "text-xs",
+                            item.priority === "high" && "bg-red-500",
+                            item.priority === "medium" && "bg-amber-500",
+                            item.priority === "low" && "bg-blue-500"
+                          )}
+                        >
+                          {priorityOptions.find((opt) => opt.value === item.priority)?.label}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {statusOptions.map((status) => (
+                        <Button
+                          key={status.value}
+                          size="sm"
+                          variant={item.status === status.value ? "default" : "ghost"}
+                          className="h-8 text-xs"
+                          style={item.status === status.value ? { backgroundColor: 'rgba(118, 31, 255, 0.49)' } : undefined}
+                          onClick={() => onUpdateStatus(item.id, status.value as AgendaItem["status"])}
+                        >
+                          {status.label}
+                        </Button>
+                      ))}
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-8 text-xs"
+                        iconName="Trash2"
+                        style={{ backgroundColor: 'rgba(255, 0, 0, 0.24)' }}
+                        onClick={() => { if (window.confirm('Excluir este compromisso?')) onDelete(item.id); }}
+                      >
+                        Excluir
+                      </Button>
+                    </div>
                   </div>
-                </div>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {statusOptions.map((status) => (
-                    <Button
-                      key={status.value}
-                      size="sm"
-                      variant={item.status === status.value ? "default" : "ghost"}
-                      className="h-8 text-xs"
-                      style={item.status === status.value ? { backgroundColor: 'rgba(118, 31, 255, 0.49)' } : undefined}
-                      onClick={() => onUpdateStatus(item.id, status.value as AgendaItem["status"])}
-                    >
-                      {status.label}
-                    </Button>
-                  ))}
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="h-8 text-xs"
-                    iconName="Trash2"
-                    style={{ backgroundColor: 'rgba(255, 0, 0, 0.24)' }}
-                    onClick={() => { if (window.confirm('Excluir este compromisso?')) onDelete(item.id); }}
-                  >
-                    Excluir
-                  </Button>
-                </div>
+                ))}
+                {eventsForDay.length === 0 && (
+                  <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 py-12 text-center text-sm text-muted-foreground">
+                    <CalendarIcon className="h-6 w-6" />
+                    Nenhum compromisso para esta data.
+                  </div>
+                )}
               </div>
-            ))}
-            {eventsForDay.length === 0 && (
-              <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 py-12 text-center text-sm text-muted-foreground">
-                <CalendarIcon className="h-6 w-6" />
-                Nenhum compromisso para esta data.
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </>
+      ) : (
+        <Card className="h-full">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between text-lg">
+              <span>Lista de compromissos</span>
+              <Badge variant="outline">{items.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3">
+              {items
+                .slice()
+                .sort((a, b) => {
+                  const da = safeParseDate(a.date).getTime();
+                  const db = safeParseDate(b.date).getTime();
+                  const ta = a.time ? Number(a.time.replace(":", "")) : 0;
+                  const tb = b.time ? Number(b.time.replace(":", "")) : 0;
+                  return da !== db ? da - db : ta - tb;
+                })
+                .map((item) => (
+                  <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/30 p-3">
+                    <div>
+                      <p className="text-sm font-semibold">{item.title}</p>
+                      <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><CalendarIcon className="h-3 w-3" />{formatDate(safeParseDate(item.date), "dd/MM/yyyy")}{item.time ? ` • ${item.time}` : ""}</span>
+                        <span className="px-2 py-0.5 rounded-full bg-muted/50 capitalize">{item.status}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {statusOptions.map((status) => (
+                        <Button
+                          key={`${item.id}-${status.value}`}
+                          size="sm"
+                          variant={item.status === status.value ? "default" : "outline"}
+                          className="h-8 text-xs"
+                          onClick={() => onUpdateStatus(item.id, status.value as AgendaItem["status"])}
+                        >
+                          {status.label}
+                        </Button>
+                      ))}
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        iconName="Trash2"
+                        onClick={() => { if (window.confirm('Excluir este compromisso?')) onDelete(item.id); }}
+                      >
+                        Excluir
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              {items.length === 0 && (
+                <div className="rounded-lg border border-dashed border-border/50 p-6 text-center text-sm text-muted-foreground">
+                  Nenhum compromisso cadastrado.
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">

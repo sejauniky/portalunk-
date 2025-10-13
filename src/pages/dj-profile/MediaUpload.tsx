@@ -23,15 +23,13 @@ type MediaCategory = (typeof categoryOptions)[number]["value"];
 type MediaFileType = "image" | "video" | "audio" | "document";
 
 type UploadItem = {
-  file: File | null;
+  file: File;
   category: MediaCategory;
   preview?: string;
   progress: number;
   status: UploadStatus;
   title: string;
   errorMessage?: string;
-  driveLink?: string;
-  isLinkOnly?: boolean;
 };
 
 interface MediaUploadProps {
@@ -49,11 +47,9 @@ const formatFileSize = (bytes: number) => {
   return `${value.toFixed(exponent === 0 ? 0 : 2)} ${units[exponent]}`;
 };
 
-const getItemIcon = (item: UploadItem) => {
-  if (item.isLinkOnly) return <LinkIcon className="h-5 w-5" />;
-  const file = item.file;
-  if (file?.type.startsWith("image/")) return <ImageIcon className="h-5 w-5" />;
-  if (file?.type.startsWith("video/")) return <Video className="h-5 w-5" />;
+const getFileIcon = (file: File) => {
+  if (file.type.startsWith("image/")) return <ImageIcon className="h-5 w-5" />;
+  if (file.type.startsWith("video/")) return <Video className="h-5 w-5" />;
   return <FileText className="h-5 w-5" />;
 };
 
@@ -95,8 +91,6 @@ export function MediaUpload({ djId, onUploadComplete, onCancel }: MediaUploadPro
   const { toast } = useToast();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const linkUrlRef = useRef<string>("");
-  const linkTitleRef = useRef<string>("");
 
   const [uploadItems, setUploadItems] = useState<UploadItem[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -186,26 +180,6 @@ export function MediaUpload({ djId, onUploadComplete, onCancel }: MediaUploadPro
       try {
         updateItem(index, { status: "uploading", progress: 10 });
 
-        // Link-only backdrop: save link without uploading a file
-        if (item.category === "backdrop" && item.driveLink && (!item.file || item.isLinkOnly)) {
-          await supabase.from("media_files").insert({
-            dj_id: djId,
-            file_name: item.title,
-            file_category: "backdrop",
-            file_size: null,
-            file_type: "image",
-            file_url: item.driveLink,
-            uploaded_by: user?.id,
-            is_public: true,
-            metadata: { drive_link: item.driveLink },
-          });
-          updateItem(index, { status: "complete", progress: 100 });
-          successCount++;
-          continue;
-        }
-
-        if (!item.file) throw new Error("Arquivo não encontrado para upload");
-
         const ext = item.file.name.split(".").pop();
         const name = `${sanitizeForPath(item.title)}-${Date.now()}.${ext}`;
         const path = `${djId}/${item.category}/${name}`;
@@ -227,7 +201,6 @@ export function MediaUpload({ djId, onUploadComplete, onCancel }: MediaUploadPro
           file_url: pub?.publicUrl,
           uploaded_by: user?.id,
           is_public: true,
-          metadata: item.driveLink ? { drive_link: item.driveLink } : null,
         });
 
         updateItem(index, { status: "complete", progress: 100 });
@@ -260,11 +233,10 @@ export function MediaUpload({ djId, onUploadComplete, onCancel }: MediaUploadPro
           </p>
 
           <div
-            className={`relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-center transition ${
-              isDragOver
+            className={`relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-center transition ${isDragOver
                 ? "border-purple-400 bg-purple-500/10"
                 : "border-purple-700/50 bg-black/60 hover:border-purple-400/80"
-            }`}
+              }`}
             onClick={() => fileInputRef.current?.click()}
             onDragOver={(e) => {
               e.preventDefault();
@@ -294,57 +266,6 @@ export function MediaUpload({ djId, onUploadComplete, onCancel }: MediaUploadPro
           />
         </div>
 
-        {/* Backdrop link adder */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-200">Adicionar link de Backdrop</label>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <input
-              type="url"
-              placeholder="https://drive.google.com/..."
-              className="flex-1 rounded-lg border border-purple-500/30 bg-black/60 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-500/50"
-              onChange={(e) => (linkUrlRef.current = e.target.value)}
-            />
-            <input
-              type="text"
-              placeholder="Título (opcional)"
-              className="flex-1 rounded-lg border border-white/10 bg-black/60 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-500/30"
-              onChange={(e) => (linkTitleRef.current = e.target.value)}
-            />
-            <button
-              className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
-              onClick={() => {
-                const url = linkUrlRef.current?.trim();
-                const title = linkTitleRef.current?.trim();
-                try {
-                  if (!url) return;
-                  const u = new URL(url);
-                  if (!/^https?:$/.test(u.protocol)) return;
-                } catch {
-                  toast({ variant: "destructive", title: "Link inválido", description: "Informe uma URL válida" });
-                  return;
-                }
-                setUploadItems((prev) => [
-                  ...prev,
-                  {
-                    file: null,
-                    category: "backdrop",
-                    preview: undefined,
-                    progress: 0,
-                    status: "pending",
-                    title: title || "Backdrop (link)",
-                    driveLink: url,
-                    isLinkOnly: true,
-                  },
-                ]);
-                if (fileInputRef.current) fileInputRef.current.value = "";
-              }}
-            >
-              Adicionar
-            </button>
-          </div>
-          <p className="text-xs text-gray-400">O link será salvo como Backdrop.</p>
-        </div>
-
         {uploadItems.length > 0 && (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -372,7 +293,7 @@ export function MediaUpload({ djId, onUploadComplete, onCancel }: MediaUploadPro
                       />
                     ) : (
                       <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-purple-500/20 text-purple-300">
-                        {getItemIcon(file)}
+                        {getFileIcon(file.file)}
                       </div>
                     )}
 
@@ -386,7 +307,7 @@ export function MediaUpload({ djId, onUploadComplete, onCancel }: MediaUploadPro
                         className="w-full bg-transparent border-none text-sm font-medium focus:outline-none"
                       />
                       <p className="text-xs text-gray-400">
-                        {file.file ? formatFileSize(file.file.size) : (file.isLinkOnly ? "Link" : "-")}
+                        {formatFileSize(file.file.size)}
                       </p>
                       {file.status === "uploading" && (
                         <div className="mt-1 h-1.5 w-full rounded-full bg-gray-700">
@@ -429,24 +350,6 @@ export function MediaUpload({ djId, onUploadComplete, onCancel }: MediaUploadPro
                       </option>
                     ))}
                   </select>
-
-                  {file.category === "backdrop" && (
-                    <div className="mt-2">
-                      <label className="text-xs text-gray-400 mb-1 block">
-                        Link do Google Drive (opcional)
-                      </label>
-                      <input
-                        type="url"
-                        value={file.driveLink || ""}
-                        onChange={(e) =>
-                          updateItem(index, { driveLink: e.target.value })
-                        }
-                        placeholder="https://drive.google.com/..."
-                        disabled={file.status !== "pending"}
-                        className="w-full rounded-lg border border-purple-500/30 bg-black/60 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-500/50"
-                      />
-                    </div>
-                  )}
                 </div>
               ))}
             </div>

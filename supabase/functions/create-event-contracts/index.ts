@@ -59,6 +59,24 @@ serve(async (req) => {
 
     const producerName = producer?.company_name || producer?.name || producer?.email || 'Produtor';
 
+    // Buscar nome de todos os DJs selecionados para uso em {{djNames}} / {DJ_NAMES}
+    const { data: allDjsData } = await supabase
+      .from('djs')
+      .select('id, artist_name, real_name')
+      .in('id', djIds);
+    const allDjNames = (allDjsData || []).map((d: any) => d?.artist_name || d?.real_name || 'DJ').join(', ');
+
+    // Helper para formatar data apenas com dia/mês/ano (sem horário) e sem alterar o dia
+    const formatDateOnlyBR = (value: string | null | undefined) => {
+      if (!value) return '';
+      const raw = String(value);
+      const dateStr = raw.includes('T') ? raw.split('T')[0] : raw;
+      const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+      const d = new Date(raw);
+      return Number.isNaN(d.getTime()) ? raw : d.toLocaleDateString('pt-BR');
+    };
+
     // Criar um contrato para cada DJ
     const contracts = [];
     for (const djId of djIds) {
@@ -90,19 +108,28 @@ serve(async (req) => {
       let contractContent = template;
       const variables: Record<string, string> = {
         '{{eventName}}': event.event_name || '',
-        '{{eventDate}}': event.event_date ? new Date(event.event_date).toLocaleDateString('pt-BR') : '',
+        '{{eventDate}}': formatDateOnlyBR(event.event_date as any),
         '{{location}}': event.location || '',
         '{{city}}': event.city || '',
         '{{cacheValue}}': djFee?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || 'R$ 0,00',
         '{{djName}}': djName,
+        '{{djNames}}': allDjNames,
         '{{producerName}}': producerName,
         '{{companyName}}': settings.company_name || producerName,
         '{{commissionRate}}': event.commission_rate?.toString() || '20',
         '{{today}}': new Date().toLocaleDateString('pt-BR'),
       };
 
-      Object.entries(variables).forEach(([key, value]) => {
-        contractContent = contractContent.replace(new RegExp(key, 'g'), value);
+      // Substituir também variantes usadas em alguns templates (ex.: {DJ_NAME}, {DJ_NAMES}, {EVENT_DATE})
+      const replacements: Record<string, string> = {
+        ...variables,
+        '{DJ_NAME}': djName,
+        '{DJ_NAMES}': allDjNames,
+        '{EVENT_DATE}': formatDateOnlyBR(event.event_date as any),
+      };
+
+      Object.entries(replacements).forEach(([key, value]) => {
+        contractContent = contractContent.replace(new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
       });
 
       // Criar contract_instance

@@ -200,11 +200,29 @@ const EventCalendar = () => {
           : [];
         const combinedDJs = [event?.dj, ...extraDJs].filter(Boolean);
 
-        const djIds = combinedDJs
+        // Deduplicate DJs by id first, then by normalized name
+        const seenIds = new Set<string>();
+        const seenNames = new Set<string>();
+        const uniqueDJs = [] as any[];
+        combinedDJs.forEach((dj: any) => {
+          if (!dj) return;
+          const id = dj?.id ? String(dj.id) : null;
+          const name = (dj?.artist_name || dj?.name || dj?.stage_name || dj?.real_name || dj?.email || '')
+            .toString()
+            .trim()
+            .toLowerCase();
+          if ((id && !seenIds.has(id)) || (name && !seenNames.has(name))) {
+            if (id) seenIds.add(id);
+            if (name) seenNames.add(name);
+            uniqueDJs.push(dj);
+          }
+        });
+
+        const djIds = uniqueDJs
           .map((dj: any) => (dj?.id ? String(dj.id) : null))
           .filter((id): id is string => Boolean(id));
 
-        const djNames = combinedDJs
+        const djNames = uniqueDJs
           .map((dj: any) => dj?.artist_name || dj?.name || dj?.stage_name)
           .filter(Boolean);
 

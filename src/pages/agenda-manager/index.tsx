@@ -244,6 +244,7 @@ const PersonalAgendaSection = ({
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMonth, setViewMonth] = useState<Date>(new Date());
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -343,7 +344,7 @@ const PersonalAgendaSection = ({
             </div>
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" onClick={goPrevMonth}>Anterior</Button>
-              <Button size="sm" variant="outline" onClick={goNextMonth}>Próximo</Button>
+              <Button size="sm" variant="outline" onClick={goNextMonth}>Pr��ximo</Button>
             </div>
           </CardTitle>
         </CardHeader>

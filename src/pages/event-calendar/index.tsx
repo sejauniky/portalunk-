@@ -125,6 +125,11 @@ const applyTemplatePlaceholders = (
   const djNames = djNamesArr.filter(Boolean).map((s) => `${s}`.trim()).join(', ');
   const firstDj = djNamesArr[0] || dj?.name || 'DJ';
 
+  const eventAddress = [String(event.location ?? ''), String((event as any).city ?? '')]
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+    .join(', ');
+
   const replacements: Record<string, string> = {
     '{DJ_NAME}': String(firstDj || 'DJ'),
     '{DJ_NAMES}': String(djNames || firstDj || 'DJ'),
@@ -132,9 +137,11 @@ const applyTemplatePlaceholders = (
     '{EVENT_NAME}': String(event.title ?? 'Evento'),
     '{VENUE}': String(event.location ?? ''),
     '{CITY}': String((event as any).city ?? ''),
+    '{ENDERECO}': eventAddress,
     '{AMOUNT}': formatCurrencyLabel(ensureCurrencyNumber(contract.value)),
     '{PRODUCER_NAME}': String(producer?.name ?? 'Produtor'),
     '{PRODUCER_COMPANY}': String((producer as any)?.company_name ?? ''),
+    '{CPF_CNPJ}': String((producer as any)?.cnpj ?? ''),
     '{COMMISSION_RATE}': (event as any)?.commission_rate != null ? `${(event as any).commission_rate}%` : '',
     '{STATUS}': String(event.status ?? ''),
   };
@@ -354,7 +361,7 @@ const EventCalendar = () => {
 
       const { data, error } = await supabase
         .from("producers")
-        .select("id, name, company_name, email")
+        .select("id, name, company_name, email, cnpj, address, business_address, zip_code")
         .eq("id", producerId)
         .maybeSingle();
 
@@ -367,7 +374,11 @@ const EventCalendar = () => {
         name: data.name || data.company_name || data.email || "Produtor",
         email: data.email ?? "",
         company_name: data.company_name ?? null,
-      };
+        cnpj: (data as any)?.cnpj ?? null,
+        address: (data as any)?.address ?? null,
+        business_address: (data as any)?.business_address ?? null,
+        zip_code: (data as any)?.zip_code ?? null,
+      } as any;
     },
     [calendarProducers],
   );

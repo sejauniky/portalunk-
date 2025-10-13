@@ -395,7 +395,6 @@ const ProducerManagement = () => {
         company_name: updates.company_name,
         cnpj: updates.cnpj,
         address: updates.address,
-        business_address: updates.address,
         contact_person: updates.contact_person,
         is_active: updates.is_active,
         avatar_url: updates.avatar_url,

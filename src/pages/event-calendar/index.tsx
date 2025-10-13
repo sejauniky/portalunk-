@@ -132,7 +132,7 @@ const applyTemplatePlaceholders = (
 
   const producerCnpj = String((producer as any)?.cnpj ?? '');
   const producerAddrParts = [
-    String((producer as any)?.business_address ?? (producer as any)?.address ?? ''),
+    String((producer as any)?.address ?? ''),
     String((producer as any)?.zip_code ?? ''),
   ]
     .map((s) => s.trim())
@@ -391,7 +391,6 @@ const EventCalendar = () => {
           // extra fields used by contract placeholders
           cnpj: (producer as any)?.cnpj ?? null,
           address: (producer as any)?.address ?? null,
-          business_address: (producer as any)?.business_address ?? null,
           zip_code: (producer as any)?.zip_code ?? null,
         } as any;
       })
@@ -429,12 +428,12 @@ const EventCalendar = () => {
     async (producerId: string): Promise<CalendarProducer | null> => {
       if (!producerId) return null;
       const local: any = calendarProducers.find((item) => item.id === producerId);
-      const hasFullData = local && (local.cnpj || local.address || local.business_address || local.zip_code);
+      const hasFullData = local && (local.cnpj || local.address || local.zip_code);
       if (hasFullData) return local as CalendarProducer;
 
       const { data, error } = await supabase
         .from("producers")
-        .select("id, name, company_name, email, cnpj, address, business_address, zip_code")
+        .select("id, name, company_name, email, cnpj, address, zip_code")
         .eq("id", producerId)
         .maybeSingle();
 
@@ -449,7 +448,6 @@ const EventCalendar = () => {
         company_name: data.company_name ?? local?.company_name ?? null,
         cnpj: (data as any)?.cnpj ?? local?.cnpj ?? null,
         address: (data as any)?.address ?? local?.address ?? null,
-        business_address: (data as any)?.business_address ?? local?.business_address ?? null,
         zip_code: (data as any)?.zip_code ?? local?.zip_code ?? null,
       };
       return enriched as CalendarProducer;

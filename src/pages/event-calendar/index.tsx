@@ -574,7 +574,7 @@ const EventCalendar = () => {
             const selectedTemplate = templates.find(t => t.id === contractType);
 
             if (selectedTemplate?.content) {
-              const [djData, producerData] = await Promise.all([
+              const [firstDj, producerData] = await Promise.all([
                 values.dj_ids && values.dj_ids.length > 0
                   ? resolveDj(values.dj_ids[0])
                   : Promise.resolve(null),
@@ -582,6 +582,10 @@ const EventCalendar = () => {
                   ? resolveProducer(values.producer_id)
                   : Promise.resolve(null)
               ]);
+
+              const selectedDjNames = (values.dj_ids || [])
+                .map((id) => calendarDjs.find((d) => d.id === id)?.name)
+                .filter(Boolean) as string[];
 
               const tempEvent = {
                 id: eventId,
@@ -593,6 +597,7 @@ const EventCalendar = () => {
                 description: values.description,
                 status: values.status,
                 dj_id: values.dj_ids?.[0] || '',
+                dj_names: selectedDjNames,
                 producer_id: values.producer_id || '',
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
@@ -611,7 +616,7 @@ const EventCalendar = () => {
                 selectedTemplate.content,
                 tempEvent,
                 tempContract,
-                djData,
+                firstDj,
                 producerData
               );
 
@@ -628,7 +633,7 @@ const EventCalendar = () => {
           console.error("Erro ao processar contrato:", contractError);
         }
 
-        // IMPORTANTE: Processar os múltiplos DJs
+        // IMPORTANTE: Processar os múltiplos DJs e criar contratos por DJ
         if (values.dj_ids && Array.isArray(values.dj_ids) && values.dj_ids.length > 0) {
           try {
             // 1. Limpar relações anteriores (importante para edição)
@@ -638,16 +643,13 @@ const EventCalendar = () => {
               .eq('event_id', eventId);
 
             if (deleteError) {
-              console.error('Erro ao limpar relações anteriores:', deleteError);
-              // Não vamos bloquear por isso, apenas logamos
+              console.warn('Erro ao limpar relações anteriores:', deleteError);
             }
 
             // 2. Criar novas relações para cada DJ selecionado
             const eventsDjsRecords = values.dj_ids.map(djId => ({
               event_id: eventId,
               dj_id: djId,
-              // Se você tiver cachê por DJ no formulário, adicione aqui:
-              // fee: values.dj_fee_map?.[djId] || null,
             }));
 
             const { error: insertError } = await supabase
@@ -658,9 +660,28 @@ const EventCalendar = () => {
               console.error('Erro ao criar relações DJ-Evento:', insertError);
               toast({
                 title: "Aviso",
-                description: "Evento salvo, mas houve um problema ao vincular os DJs. Tente editar o evento novamente.",
+                description: "Evento salvo, mas houve um problema ao vincular os DJs.",
                 variant: "destructive"
               });
+            } else {
+              // 3. Invocar a função para criar instâncias de contrato para TODOS os DJs selecionados
+              try {
+                await supabase.functions.invoke('create-event-contracts', {
+                  body: {
+                    eventId,
+                    djIds: values.dj_ids,
+                    contractType: values.contract_type || 'basic',
+                    producerId: values.producer_id,
+                  },
+                });
+              } catch (fnErr) {
+                console.error('Erro ao criar contratos por DJ:', fnErr);
+                toast({
+                  title: 'Contrato parcial',
+                  description: 'Evento salvo, mas houve erro ao criar contratos para todos os DJs.',
+                  variant: 'destructive',
+                });
+              }
             }
           } catch (djError) {
             console.error('Erro ao processar DJs:', djError);

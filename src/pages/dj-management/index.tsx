@@ -282,9 +282,9 @@ const DJsPage = () => {
   }
 
   return (
-    <div className="flex-1 p-8">
+    <div className="flex-1 p-8" style={{ margin: '0 -18px 0 -4px' }}>
 
-      <div className="flex-1 p-8">
+      <div className="flex-1" style={{ marginLeft: '-56px', padding: '28px 0 73px 34px' }}>
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Gerenciar DJs</h1>
@@ -428,7 +428,13 @@ const DJsPage = () => {
                           </Badge>
                         )}
                         {statusLabel && (
-                          <Badge variant={dj.is_active ? "default" : "outline"}>{statusLabel}</Badge>
+                          <Badge
+                            variant={dj.is_active ? "default" : "outline"}
+                            className={dj.is_active ? "text-white" : undefined}
+                            style={dj.is_active ? { backgroundColor: 'rgba(10, 210, 221, 0.3)' } : undefined}
+                          >
+                            {statusLabel}
+                          </Badge>
                         )}
                       </div>
                     </div>
@@ -451,7 +457,7 @@ const DJsPage = () => {
 
                   <div className="flex items-center justify-between">
                     <Link href={`/dj-profile/${dj.id}`}>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" className="pr-3">
                         <Eye className="mr-1 h-4 w-4" />
                         Ver detalhes
                       </Button>

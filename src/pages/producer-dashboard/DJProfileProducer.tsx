@@ -637,7 +637,7 @@ const DJProfileProducer = () => {
 
       <section className="relative overflow-hidden border-b border-border">
         <div
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0 opacity-60"
           style={{
             backgroundImage: dj.background_image_url
               ? `url(${dj.background_image_url})`
@@ -646,7 +646,7 @@ const DJProfileProducer = () => {
               : undefined,
             backgroundSize: "cover",
             backgroundPosition: "center",
-            filter: "blur(20px)",
+            filter: "blur(8px)",
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />

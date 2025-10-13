@@ -18,6 +18,8 @@ type ContractedDJ = {
 type ProducerRecord = {
   id: string;
   avatar_url: string | null;
+  name: string | null;
+  contact_person: string | null;
 };
 
 type ContractInstance = {
@@ -56,7 +58,7 @@ const ProducerDashboard: FC = () => {
     try {
       const { data, error } = await supabase
         .from("producers")
-        .select("id, avatar_url")
+        .select("id, avatar_url, name, contact_person")
         .eq("id", profile.id)
         .maybeSingle();
 
@@ -73,6 +75,8 @@ const ProducerDashboard: FC = () => {
         setProducerRecord({
           id: String((data as { id: string }).id),
           avatar_url: (data as { avatar_url?: string | null }).avatar_url ?? null,
+          name: (data as { name?: string | null }).name ?? null,
+          contact_person: (data as { contact_person?: string | null }).contact_person ?? null,
         });
       } else {
         setProducerRecord(null);
@@ -267,9 +271,9 @@ const ProducerDashboard: FC = () => {
                 <img src="/vinil.svg" alt="vinil" className="w-14 h-14 object-contain slow-spin" />
               </div>
               <div>
-                <h1 className="text-xl font-bold gradient-text" style={{ backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundSize: "cover" }}>Bem-vindo(a) ao Portal UNK</h1>
+                <h1 className="text-xl font-bold gradient-text" style={{ backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundSize: "cover" }}>Bem-vindo(a) ao Portal UNK{producerRecord?.contact_person ? ` ${producerRecord.contact_person}` : ""}</h1>
                 <p className="text-sm text-muted-foreground">
-                  Logado como Produtor(a) {profile?.fullName || profile?.email?.split('@')[0] || "Produtor"}
+                  Logado como {producerRecord?.name || profile?.fullName || profile?.email?.split('@')[0] || "Produtor"}
                 </p>
               </div>
             </div>

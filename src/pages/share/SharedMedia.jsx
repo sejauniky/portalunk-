@@ -48,6 +48,67 @@ const SharedMedia = () => {
         if (error) throw error;
 
         if (!data) {
+          // Tentar resolver como slug do DJ (ex: /share/nome-do-dj)
+          try {
+            const nameGuess = decodeURIComponent(token).replace(/-/g, ' ').trim();
+            let djRow = null;
+            const exactRes = await supabase
+              .from('djs')
+              .select('id, artist_name')
+              .eq('artist_name', nameGuess)
+              .maybeSingle();
+            if (!exactRes.error && exactRes.data) {
+              djRow = exactRes.data;
+            } else {
+              const ilikeRes = await supabase
+                .from('djs')
+                .select('id, artist_name')
+                .ilike('artist_name', nameGuess)
+                .maybeSingle();
+              if (!ilikeRes.error) djRow = ilikeRes.data;
+            }
+
+            if (djRow && djRow.id) {
+              const { data: linkRow, error: linkErr } = await supabase
+                .from('shared_media_links')
+                .select('id, dj_id, producer_id, share_token, password_hash, expires_at, accessed_count, created_at')
+                .eq('dj_id', djRow.id)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+              if (!linkErr && linkRow) {
+                const expires = linkRow.expires_at || null;
+                if (expires) {
+                  const ex = new Date(expires);
+                  if (Number.isNaN(ex.getTime()) || ex.getTime() < Date.now()) {
+                    setError('Link expirado');
+                    setChecking(false);
+                    return;
+                  }
+                }
+
+                try {
+                  await supabase
+                    .from('shared_media_links')
+                    .update({ accessed_count: (linkRow.accessed_count || 0) + 1, last_accessed_at: new Date().toISOString() })
+                    .eq('id', linkRow.id);
+                } catch {}
+
+                setMeta({
+                  djId: linkRow.dj_id,
+                  djName: djRow.artist_name || null,
+                  password_hash: linkRow.password_hash,
+                  share_id: linkRow.id,
+                });
+                setChecking(false);
+                return;
+              }
+            }
+          } catch (slugErr) {
+            console.warn('Slug resolution failed', slugErr);
+          }
+
           // Fallback para links legados armazenados no Storage
           try {
             const { data: fileData, error: downloadError } = await supabase

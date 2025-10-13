@@ -829,6 +829,12 @@ const DJProfileProducer = () => {
                                   refreshToken={signatureRefresh}
                                   onOpen={async (currentEvent) => {
                                     setSelectedEventForContract(currentEvent);
+                                    // Open immediately with any available event content; we'll resolve instance in background
+                                    const initialContent = (currentEvent as any)?.contract_content || "";
+                                    if (initialContent) {
+                                      setContractInstance({ id: "", content: initialContent, signature_status: "pending" });
+                                      setContractModalOpen(true);
+                                    }
                                     try {
                                       // Try to fetch existing contract instance for this event + DJ
                                       let { data, error } = await supabase
@@ -836,6 +842,7 @@ const DJProfileProducer = () => {
                                         .select("id, contract_content, signature_status")
                                         .eq("event_id", currentEvent.id)
                                         .eq("dj_id", djId)
+                                        .limit(1)
                                         .maybeSingle();
 
                                       if ((error || !data) && djId) {
@@ -848,7 +855,7 @@ const DJProfileProducer = () => {
                                             .maybeSingle();
 
                                           const contractType = (evInfo as any)?.contract_type || "basic";
-                                          const ownerProducerId = (evInfo as any)?.producer_id || producerId || "";
+                                          const ownerProducerId = (evInfo as any)?.producer_id || userProfile?.id || "";
 
                                           if (ownerProducerId) {
                                             await supabase.functions.invoke('create-event-contracts', {
@@ -866,23 +873,23 @@ const DJProfileProducer = () => {
                                               .select("id, contract_content, signature_status")
                                               .eq("event_id", currentEvent.id)
                                               .eq("dj_id", djId)
+                                              .limit(1)
                                               .maybeSingle();
                                             data = retry.data as any;
                                             error = retry.error as any;
                                           }
-                                        } catch (creationErr) {
-                                          // proceed to show error below
+                                        } catch (_) {
+                                          // ignore and fall through to message if still unavailable
                                         }
                                       }
 
-                                      if (error || !data) {
+                                      if (data && !error) {
+                                        const resolvedContent = (currentEvent as any)?.contract_content || data.contract_content || "";
+                                        setContractInstance({ id: String(data.id), content: resolvedContent, signature_status: data.signature_status || "pending" });
+                                        setContractModalOpen(true);
+                                      } else if (!initialContent) {
                                         toast({ title: "Contrato não disponível", description: "Nenhuma instância de contrato encontrada para este evento.", variant: "destructive" });
-                                        return;
                                       }
-
-                                      const resolvedContent = (currentEvent as any)?.contract_content || data.contract_content || "";
-                                      setContractInstance({ id: String(data.id), content: resolvedContent, signature_status: data.signature_status || "pending" });
-                                      setContractModalOpen(true);
                                     } catch (e) {
                                       toast({ title: "Erro", description: "Falha ao abrir contrato.", variant: "destructive" });
                                     }

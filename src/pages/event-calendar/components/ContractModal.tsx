@@ -133,8 +133,8 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
   return (
     <Dialog open={open} onOpenChange={(value) => (value ? undefined : onClose())}>
       <DialogContent className="w-full max-w-6xl border border-border bg-background/95 p-0 text-foreground shadow-glass transition-all sm:rounded-xl [&>button]:hidden">
-        <div className="flex h-full max-h-[90vh] flex-col">
-          <header className="flex items-start justify-between gap-4 border-b border-border bg-background/95 px-6 py-5">
+        <div className="flex h-full max-h-[657px] flex-col pr-[199px] mr-[-4px]">
+          <header className="flex items-start justify-between gap-4 border-b border-border bg-background/95 py-[20px] pl-[30px] pr-[104px] w-[829px] mr-[9px]">
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <FileText className="h-5 w-5" />
@@ -191,7 +191,7 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
             </div>
           ) : (
             <ScrollArea className="flex-1">
-              <div className="space-y-6 px-4 py-5">
+              <div className="space-y-6 text-[11px] w-[1199px] h-[539.3px] max-w-[849px] min-h-[22px] mr-[99px] pr-[16px] pl-[29px] pt-[17px] pb-[19px]">
                 <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                   <div className="rounded-xl border border-border bg-muted/10 p-4">
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">

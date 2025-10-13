@@ -828,7 +828,7 @@ const ContentPlannerSection = ({
         <div>
           <h2 className="text-xl font-semibold">Planejamento de Conteúdo</h2>
           <p className="text-sm text-muted-foreground">
-            Organize campanhas, entregas de m��dia e rotinas de relacionamento com os DJs.
+            Organize campanhas, entregas de mídia e rotinas de relacionamento com os DJs.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -1295,6 +1295,38 @@ const AgendaManager = () => {
   const [kanbanSettings, setKanbanSettings] = useLocalStorageState<KanbanSettingsType>(STORAGE_KEYS.kanban, defaultKanbanSettings);
   
   const [activeTab, setActiveTab] = useState("personal");
+  const { user } = useAuth();
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [notesLoading, setNotesLoading] = useState(false);
+
+  const loadNotes = useCallback(async () => {
+    if (!user?.id) return;
+    setNotesLoading(true);
+    try {
+      const data = await notesService.listByUser(user.id);
+      setNotes(data);
+    } finally {
+      setNotesLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => { loadNotes(); }, [loadNotes]);
+
+  const createNote = useCallback(async (values: { title: string; content: string }) => {
+    if (!user?.id) return;
+    const created = await notesService.create(user.id, values);
+    setNotes(prev => [created, ...prev]);
+  }, [user?.id]);
+
+  const updateNote = useCallback(async (id: string, values: Partial<Pick<Note, 'title' | 'content'>>) => {
+    await notesService.update(id, values);
+    setNotes(prev => prev.map(n => n.id === id ? { ...n, ...values, updated_at: new Date().toISOString() } as Note : n));
+  }, []);
+
+  const deleteNote = useCallback(async (id: string) => {
+    await notesService.remove(id);
+    setNotes(prev => prev.filter(n => n.id !== id));
+  }, []);
 
   // Funções de CRUD
   const createItem = useCallback((payload: Omit<AgendaItem, "id">) => {

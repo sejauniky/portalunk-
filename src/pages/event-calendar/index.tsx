@@ -508,7 +508,7 @@ const EventCalendar = () => {
         const [{ data: settingsData, error: settingsError }, { data: eventData, error: eventError }] = await Promise.all([
           supabase
             .from("company_settings")
-            .select("contract_basic, contract_intermediate, contract_premium")
+            .select("contract_basic, contract_intermediate, contract_premium, bank_name, bank_agency, bank_account, pix_key")
             .maybeSingle<CompanySettingsRow>(),
           supabase
             .from("events")
@@ -681,7 +681,7 @@ const EventCalendar = () => {
         try {
           const { data: settingsData } = await supabase
             .from("company_settings")
-            .select("contract_basic, contract_intermediate, contract_premium")
+            .select("contract_basic, contract_intermediate, contract_premium, bank_name, bank_agency, bank_account, pix_key")
             .maybeSingle();
 
           if (settingsData) {

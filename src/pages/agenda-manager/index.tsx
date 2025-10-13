@@ -26,6 +26,8 @@ import Input from "@/components/ui/input";
 import { useDJs } from "@/hooks/useDJs";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import { eventService } from "@/services/supabaseService";
+import { notesService } from "@/services/notesService";
+import { useAuth } from "@/hooks/use-auth";
 
 // Utility function to combine class names
 const cn = (...classes: (string | boolean | undefined)[]) => {

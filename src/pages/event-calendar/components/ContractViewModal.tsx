@@ -15,6 +15,8 @@ interface ContractViewModalProps {
   eventName: string;
   signatureStatus: string;
   onSign?: () => void;
+  eventId?: string;
+  djId?: string;
 }
 
 export const ContractViewModal = ({
@@ -25,6 +27,8 @@ export const ContractViewModal = ({
   eventName,
   signatureStatus,
   onSign,
+  eventId,
+  djId,
 }: ContractViewModalProps) => {
   const [isSigning, setIsSigning] = useState(false);
   const [agree, setAgree] = useState(false);
@@ -32,10 +36,55 @@ export const ContractViewModal = ({
   const handleSign = async () => {
     setIsSigning(true);
     try {
+      let resolvedContractId = contractId;
+
+      if (!resolvedContractId && eventId && djId) {
+        // Try to find existing instance
+        const existing = await supabase
+          .from("contract_instances")
+          .select("id")
+          .eq("event_id", eventId)
+          .eq("dj_id", djId)
+          .maybeSingle();
+
+        if (existing?.data?.id) {
+          resolvedContractId = String(existing.data.id);
+        } else {
+          // Attempt to create instance via edge function
+          const { data: evInfo } = await supabase
+            .from("events")
+            .select("contract_type, producer_id")
+            .eq("id", eventId)
+            .maybeSingle();
+
+          const contractType = (evInfo as any)?.contract_type || "basic";
+          const ownerProducerId = (evInfo as any)?.producer_id || null;
+
+          if (ownerProducerId) {
+            await supabase.functions.invoke('create-event-contracts', {
+              body: { eventId, djIds: [djId], contractType, producerId: ownerProducerId }
+            });
+            const retry = await supabase
+              .from("contract_instances")
+              .select("id")
+              .eq("event_id", eventId)
+              .eq("dj_id", djId)
+              .maybeSingle();
+            if (retry?.data?.id) {
+              resolvedContractId = String(retry.data.id);
+            }
+          }
+        }
+      }
+
+      if (!resolvedContractId) {
+        throw new Error('Contrato não disponível para assinatura no momento.');
+      }
+
       const { error } = await supabase
         .from("contract_instances")
         .update({ signature_status: "signed", signed_at: new Date().toISOString() })
-        .eq("id", contractId);
+        .eq("id", resolvedContractId);
 
       if (error) throw error;
 
@@ -106,7 +155,7 @@ export const ContractViewModal = ({
                   Li e concordo com os termos do contrato
                 </label>
               </div>
-              <Button onClick={handleSign} disabled={isSigning || !agree || !contractId} className="gap-2">
+              <Button onClick={handleSign} disabled={isSigning || !agree} className="gap-2">
                 <Check className="h-4 w-4" />
                 {isSigning ? "Salvando..." : "Salvar"}
               </Button>

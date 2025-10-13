@@ -71,6 +71,10 @@ function AppRoutes() {
       if (location === "/login" || location === "") {
         setLocation("/");
       }
+      // Guard against accidental producer route when admin
+      if (location === "/producer-dashboard") {
+        setLocation("/");
+      }
     }
   }, [isAuthenticated, role, location, setLocation, isShareRoute]);
 

@@ -135,8 +135,28 @@ const Login = () => {
       toast.success('Login realizado com sucesso!');
       await trackAnimation;
       await new Promise((resolve) => setTimeout(resolve, 250));
-      const latestRole = roleRef.current;
-      const destination = latestRole === 'producer' ? '/producer-dashboard' : '/';
+
+      // Determine role directly from profile to avoid stale roleRef
+      let resolvedRole: 'admin' | 'producer' = 'producer';
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData?.user?.id;
+        if (userId) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', userId)
+            .maybeSingle();
+          if ((profile as any)?.role === 'admin') {
+            resolvedRole = 'admin';
+          }
+        }
+      } catch (_) {
+        // Fallback to last known role if direct check fails
+        resolvedRole = roleRef.current === 'admin' ? 'admin' : 'producer';
+      }
+
+      const destination = resolvedRole === 'producer' ? '/producer-dashboard' : '/';
       setLocation(destination);
     } catch (loginError) {
       console.error(loginError);

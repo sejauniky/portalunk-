@@ -728,12 +728,20 @@ const EventCalendar = () => {
                 value: payload.cache_value,
               };
 
+              const paymentDetails = [
+                settingsData?.bank_name ? `Banco: ${settingsData.bank_name}` : null,
+                settingsData?.bank_agency ? `Agência: ${settingsData.bank_agency}` : null,
+                settingsData?.bank_account ? `Conta: ${settingsData.bank_account}` : null,
+                settingsData?.pix_key ? `PIX: ${settingsData.pix_key}` : null,
+              ].filter(Boolean).join(' | ');
+
               const processedContent = applyTemplatePlaceholders(
                 selectedTemplate.content,
                 tempEvent,
                 tempContract,
                 firstDj,
-                producerData
+                producerData,
+                paymentDetails
               );
 
               await supabase

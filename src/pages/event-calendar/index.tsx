@@ -170,6 +170,17 @@ const applyTemplatePlaceholders = (
     '{DATA DO PAGAMENTO}': eventDateLabel,
   };
 
+  if (paymentDetails) {
+    const pd = String(paymentDetails);
+    Object.assign(replacements, {
+      '{PAYMENT_DETAILS}': pd,
+      '{BANK_DETAILS}': pd,
+      '{DADOS_BANCARIOS}': pd,
+      '{CONTA_PAGAMENTO}': pd,
+      '{DADOS_PARA_PAGAMENTO}': pd,
+    });
+  }
+
   let out = template;
 
   // Apply replacements for both curly-brace and square-bracket variants

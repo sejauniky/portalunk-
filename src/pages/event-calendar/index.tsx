@@ -139,10 +139,12 @@ const applyTemplatePlaceholders = (
     .filter((s) => s.length > 0);
   const producerAddress = producerAddrParts.join(' - ');
 
+  const eventDateLabel = formatDateLabel(event.event_date);
+
   const replacements: Record<string, string> = {
     '{DJ_NAME}': String(firstDj || 'DJ'),
     '{DJ_NAMES}': String(djNames || firstDj || 'DJ'),
-    '{EVENT_DATE}': formatDateLabel(event.event_date),
+    '{EVENT_DATE}': eventDateLabel,
     '{EVENT_NAME}': String(event.title ?? 'Evento'),
     '{VENUE}': String(event.location ?? ''),
     '{CITY}': String((event as any).city ?? ''),
@@ -160,12 +162,53 @@ const applyTemplatePlaceholders = (
     '{PRODUCER_ADDRESS}': producerAddress,
     '{COMMISSION_RATE}': (event as any)?.commission_rate != null ? `${(event as any).commission_rate}%` : '',
     '{STATUS}': String(event.status ?? ''),
+    '{DATA DO PAGAMENTO}': eventDateLabel,
   };
 
   let out = template;
+
+  // Apply replacements for both curly-brace and square-bracket variants
   Object.entries(replacements).forEach(([key, val]) => {
-    out = out.replace(new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), val);
+    const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out.replace(new RegExp(escaped, 'g'), val);
+    const bracketKey = key.replace('{', '[').replace('}', ']');
+    const bracketEscaped = bracketKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out.replace(new RegExp(bracketEscaped, 'g'), val);
   });
+
+  // Heuristic fill for common Portuguese labels if placeholders were not present
+  // Fill CPF/CNPJ
+  if (producerCnpj) {
+    out = out.replace(/(CPF\s*\/\s*CNPJ\s*:\s*)([^\n]*)/gi, (m, p1, p2) => {
+      const hasNumber = /\d/.test(p2);
+      const hasText = p2 && p2.trim().length > 0 && !/\[.*?\]/.test(p2);
+      return hasNumber || hasText ? m : `${p1}${producerCnpj}`;
+    });
+    out = out.replace(/(CNPJ\s*:\s*)([^\n]*)/gi, (m, p1, p2) => {
+      const hasNumber = /\d/.test(p2);
+      const hasText = p2 && p2.trim().length > 0 && !/\[.*?\]/.test(p2);
+      return hasNumber || hasText ? m : `${p1}${producerCnpj}`;
+    });
+  }
+
+  // Fill ENDEREÇO/ENDERECO
+  if (producerAddress) {
+    out = out.replace(/(ENDERE[ÇC]O\s*:\s*)([^\n]*)/gi, (m, p1, p2) => {
+      const hasText = p2 && p2.trim().length > 0 && !/\[.*?\]/.test(p2);
+      return hasText ? m : `${p1}${producerAddress}`;
+    });
+  }
+
+  // Fill DATA DO PAGAMENTO if appears as a label without placeholder
+  if (eventDateLabel) {
+    out = out.replace(/(DATA\s+DO\s+PAGAMENTO\s*:\s*)([^\n]*)/gi, (m, p1, p2) => {
+      const hasDate = /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(p2) || p2.trim().length > 0;
+      return hasDate ? m : `${p1}${eventDateLabel}`;
+    });
+    // Also replace bare [DATA DO PAGAMENTO] occurrences
+    out = out.replace(/\[\s*DATA\s+DO\s+PAGAMENTO\s*\]/gi, eventDateLabel);
+  }
+
   return out;
 };
 

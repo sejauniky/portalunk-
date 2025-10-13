@@ -19,19 +19,23 @@ const EventModal = ({ djId, producerId, isOpen, onClose }: { djId: string; produ
   const load = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('events')
-        .select('id, event_name, event_date, fee, cache_value, payment_status, producer_id')
-        .eq('dj_id', djId)
-        .eq('producer_id', producerId)
-        .order('event_date', { ascending: false });
-
-      if (error) {
-        console.error('Failed to load events', error);
+      if (!djId || !producerId) {
         setEvents([]);
-      } else {
-        setEvents((data ?? []) as any[]);
+        return;
       }
+      // Load events for this DJ considering both primary and relation links, then filter by producer
+      const allForDj = await eventService.getByDj(djId);
+      const filtered = (allForDj || []).filter((ev: any) => String(ev.producer_id || "") === String(producerId));
+      filtered.sort((a: any, b: any) => {
+        const toTs = (v: any) => {
+          const val = v?.event_date ?? v?.date ?? null;
+          if (!val) return 0;
+          const t = new Date(val as any).getTime();
+          return Number.isNaN(t) ? 0 : t;
+        };
+        return toTs(b) - toTs(a);
+      });
+      setEvents(filtered as any[]);
     } catch (err) {
       console.error('Failed load events for dj', err);
       setEvents([]);

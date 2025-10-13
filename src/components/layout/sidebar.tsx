@@ -78,11 +78,11 @@ export function Sidebar({ className }: SidebarProps) {
       <div className="lg:hidden fixed top-1.5 left-0 right-0 z-40 glass-card border-b border-primary/20 p-4 backdrop-blur-xl shadow-glow">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3 animate-fade-in">
-            <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center shadow-glow animate-pulse">
+            <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center shadow-glow animate-pulse">
               <img
                 src="https://cdn.builder.io/api/v1/image/assets%2F3d62991cf83740faa291d13d959ad05c%2Fc783b63f88704338ac16296d2ac24bd7?format=webp&width=800"
                 alt="Disco de vinil Portal UNK"
-                className="h-6 w-6 object-contain drop-shadow"
+                className="h-8 w-8 object-contain drop-shadow"
                 draggable={false}
               />
             </div>

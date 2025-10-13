@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ContractModal from "@/pages/event-calendar/components/ContractModal";
 import EventModal from "./components/EventModal";
+import { eventService } from "@/services/supabaseService";
 
 interface DJ {
   id: string;
@@ -112,14 +113,22 @@ const DJProfileProducer = () => {
     queryKey: ["producer-dj-events", djId, producerId],
     enabled: Boolean(djId && producerId),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("events")
-        .select("id, event_name, event_date, location, city, fee, payment_status, contract_attached")
-        .eq("dj_id", djId)
-        .eq("producer_id", producerId)
-        .order("event_date", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as unknown as Event[];
+      if (!djId || !producerId) return [] as Event[];
+      // Fetch events linked to this DJ either as primary (events.dj_id) or via event_djs relation,
+      // then filter by the current producer so all DJs see the same events.
+      const allForDj = await eventService.getByDj(djId);
+      const filtered = (allForDj || []).filter((ev: any) => String(ev.producer_id || "") === String(producerId));
+      // Sort by date desc and map to expected shape
+      filtered.sort((a: any, b: any) => {
+        const toTs = (v: any) => {
+          const val = v?.event_date ?? v?.date ?? null;
+          if (!val) return 0;
+          const t = new Date(val as any).getTime();
+          return Number.isNaN(t) ? 0 : t;
+        };
+        return toTs(b) - toTs(a);
+      });
+      return filtered as unknown as Event[];
     },
   });
 
@@ -628,7 +637,7 @@ const DJProfileProducer = () => {
 
       <section className="relative overflow-hidden border-b border-border">
         <div
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0 opacity-60"
           style={{
             backgroundImage: dj.background_image_url
               ? `url(${dj.background_image_url})`
@@ -637,7 +646,7 @@ const DJProfileProducer = () => {
               : undefined,
             backgroundSize: "cover",
             backgroundPosition: "center",
-            filter: "blur(20px)",
+            filter: "blur(8px)",
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />
@@ -650,7 +659,7 @@ const DJProfileProducer = () => {
                 backgroundImage: `url(${profileBackdropImage})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                opacity: 0.3,
+                opacity: 0.5,
               }}
             />
           )}

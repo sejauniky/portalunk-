@@ -231,6 +231,109 @@ const ToastContainer = ({ toasts }: { toasts: any[] }) => (
   </div>
 );
 
+// --- Seção de Notas ---
+
+type Note = { id: string; user_id: string; title: string; content: string | null; created_at: string; updated_at: string };
+
+const NotesSection = ({
+  notes,
+  onCreate,
+  onUpdate,
+  onDelete,
+}: {
+  notes: Note[];
+  onCreate: (values: { title: string; content: string }) => void;
+  onUpdate: (id: string, values: Partial<Pick<Note, "title" | "content">>) => void;
+  onDelete: (id: string) => void;
+}) => {
+  const { toast } = useToast();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<Note | null>(null);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+
+  const startCreate = () => {
+    setEditing(null);
+    setTitle("");
+    setContent("");
+    setDialogOpen(true);
+  };
+  const startEdit = (note: Note) => {
+    setEditing(note);
+    setTitle(note.title);
+    setContent(note.content || "");
+    setDialogOpen(true);
+  };
+  const submit = () => {
+    if (!title.trim()) {
+      toast({ title: "Informe um título", variant: "destructive" });
+      return;
+    }
+    if (editing) {
+      onUpdate(editing.id, { title: title.trim(), content });
+      toast({ title: "Nota atualizada" });
+    } else {
+      onCreate({ title: title.trim(), content });
+      toast({ title: "Nota criada" });
+    }
+    setDialogOpen(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Minhas Notas</h2>
+        <Button onClick={startCreate} className="gap-2"><Plus className="h-4 w-4" /> Nova nota</Button>
+      </div>
+      <div className="grid gap-3">
+        {notes.map(n => (
+          <Card key={n.id} className="border border-border/60 bg-background/80">
+            <CardContent className="pt-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold">{n.title}</p>
+                  {n.content && <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">{n.content}</p>}
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => startEdit(n)}>Editar</Button>
+                  <Button size="sm" variant="destructive" onClick={() => onDelete(n.id)}>Excluir</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+        {notes.length === 0 && (
+          <div className="rounded-lg border border-dashed border-border/50 p-6 text-center text-sm text-muted-foreground">
+            Nenhuma nota ainda.
+          </div>
+        )}
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{editing ? "Editar Nota" : "Nova Nota"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid gap-2">
+              <Label htmlFor="note-title">Título *</Label>
+              <Input id="note-title" value={title} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="note-content">Conteúdo</Label>
+              <Textarea id="note-content" rows={6} value={content} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={submit}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
 // --- Seção da Agenda Pessoal ---
 
 const PersonalAgendaSection = ({
@@ -725,7 +828,7 @@ const ContentPlannerSection = ({
         <div>
           <h2 className="text-xl font-semibold">Planejamento de Conteúdo</h2>
           <p className="text-sm text-muted-foreground">
-            Organize campanhas, entregas de mídia e rotinas de relacionamento com os DJs.
+            Organize campanhas, entregas de m��dia e rotinas de relacionamento com os DJs.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

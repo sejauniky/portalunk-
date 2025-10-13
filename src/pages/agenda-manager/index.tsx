@@ -1399,6 +1399,9 @@ const AgendaManager = () => {
           <TabsTrigger value="djs" className="gap-2">
             <Music className="h-4 w-4" /> Agenda DJ
           </TabsTrigger>
+          <TabsTrigger value="notes" className="gap-2">
+            <FileText className="h-4 w-4" /> Notas
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="personal" className="mt-6">

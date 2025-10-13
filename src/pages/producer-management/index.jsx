@@ -382,29 +382,67 @@ const ProducerManagement = () => {
         }
       }
 
-      // Update profile via Edge Function to also sync Auth email when changed
+      // Update profile directly; then try to sync producers table if present
       const updates = { ...formData };
-      const { data: updateRes, error: updateErr } = await supabase.functions.invoke('update-producer', {
-        body: { producerId: editData.id, updates }
-      });
-      if (updateErr || updateRes?.error) {
-        alert(updateErr?.message || updateRes?.error || 'Erro ao atualizar produtor');
+      const profileId = editData.profile_id || editData.id;
+      const profileUpdates = {
+        full_name: updates.name,
+        email: updates.email,
+        phone: updates.phone,
+        avatar_url: updates.avatar_url,
+      };
+      const { error: profileErr } = await supabase
+        .from('profiles')
+        .update(profileUpdates)
+        .eq('id', profileId);
+
+      if (profileErr) {
+        alert(profileErr.message || 'Erro ao atualizar perfil do produtor');
         return;
       }
 
-      // Update password if provided
+      const producerUpdates = {
+        name: updates.name,
+        email: updates.email,
+        phone: updates.phone,
+        company_name: updates.company_name,
+        company_document: updates.company_document,
+        address: updates.address,
+        city: updates.city,
+        state: updates.state,
+        contact_person: updates.contact_person,
+        is_active: updates.is_active,
+        avatar_url: updates.avatar_url,
+      };
+
+      let prodUpdateError = null;
+      try {
+        const res1 = await supabase.from('producers').update(producerUpdates).eq('profile_id', profileId);
+        if (res1.error) {
+          const res2 = await supabase.from('producers').update(producerUpdates).eq('id', editData.id);
+          prodUpdateError = res2.error || null;
+        }
+      } catch (e) {
+        prodUpdateError = e;
+      }
+      if (prodUpdateError) {
+        console.warn('Falha ao atualizar registro em producers:', prodUpdateError);
+      }
+
+      // Update password if provided (admin edge function)
       if (newPassword?.trim()) {
+        const profileIdForPw = editData.profile_id || editData.id;
         const { data: prof, error: profErr } = await supabase
           .from('profiles')
-          .select('user_id')
-          .eq('id', editData.id)
+          .select('id')
+          .eq('id', profileIdForPw)
           .single();
-        if (profErr || !prof?.user_id) {
+        if (profErr || !prof?.id) {
           alert('Erro ao obter usuário para atualizar senha');
           return;
         }
-        const { data: pwRes, error: pwErr } = await supabase.functions.invoke('update-user-password', {
-          body: { userId: prof.user_id, newPassword }
+        const { data: pwRes, error: pwErr } = await supabase.functions.invoke('admin-reset-password', {
+          body: { userId: prof.id, newPassword }
         });
         if (pwErr || pwRes?.error) {
           alert(pwErr?.message || pwRes?.error || 'Erro ao atualizar senha');

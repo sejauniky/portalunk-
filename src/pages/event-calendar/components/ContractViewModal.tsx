@@ -105,24 +105,8 @@ export const ContractViewModal = ({
               } catch {}
 
               const nowIso = new Date().toISOString();
-              const insertRes = await supabase
-                .from('contract_instances')
-                .insert({
-                  event_id: eventId as any,
-                  dj_id: djId as any,
-                  producer_id: ownerProducerId as any,
-                  template_id: contractType,
-                  contract_content: contractContent || '',
-                  contract_value: contractValue || 0,
-                  signature_status: 'pending',
-                  payment_status: 'pending',
-                })
-                .select('id')
-                .maybeSingle();
-
-              if (insertRes?.data?.id) {
-                resolvedContractId = String(insertRes.data.id);
-              }
+              // Do NOT write directly from client to protected tables (RLS).
+              // Leave contract creation to edge function only.
             }
           }
         }
@@ -132,28 +116,23 @@ export const ContractViewModal = ({
         throw new Error('Contrato não disponível para assinatura no momento.');
       }
 
-      const { error } = await supabase
-        .from("contract_instances")
-        .update({ signature_status: "signed", signed_at: new Date().toISOString() })
-        .eq("id", resolvedContractId);
+      // Call secure edge function to record signature and mark as signed
+      const { data: userData } = await supabase.auth.getUser();
+      const nowIso = new Date().toISOString();
+      const signerName = userData?.user?.email || "Produtor";
 
-      if (error) throw error;
+      const resp = await supabase.functions.invoke('process-digital-signature', {
+        body: {
+          contractInstanceId: resolvedContractId,
+          signatureData: `accepted_terms_${nowIso}`,
+          signerName,
+          signerType: 'producer',
+          location: null,
+        },
+      });
 
-      try {
-        const { data: userData } = await supabase.auth.getUser();
-        const signerId = userData?.user?.id ?? '';
-        const nowIso = new Date().toISOString();
-        await supabase.from("digital_signatures").insert({
-          contract_instance_id: contractId,
-          signer_id: signerId,
-          signer_type: "producer",
-          signer_name: userData?.user?.email || "Produtor",
-          signature_data: `accepted_terms_${nowIso}`,
-          signature_hash: (crypto as any)?.randomUUID ? (crypto as any).randomUUID() : Math.random().toString(36).slice(2),
-          signed_at: nowIso,
-        });
-      } catch (_) {
-        // best-effort audit trail; ignore errors here
+      if ((resp as any)?.error) {
+        throw new Error((resp as any)?.error?.message || 'Falha ao processar assinatura');
       }
 
       toast({

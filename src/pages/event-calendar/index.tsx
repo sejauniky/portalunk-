@@ -150,7 +150,7 @@ const applyTemplatePlaceholders = (
     '{CITY}': String((event as any).city ?? ''),
     '{ENDERECO}': eventAddress,
     '{AMOUNT}': formatCurrencyLabel(ensureCurrencyNumber(contract.value)),
-    '{PRODUCER_NAME}': String(producer?.name ?? 'Produtor'),
+    '{PRODUCER_NAME}': String((producer as any)?.company_name ?? producer?.name ?? 'Produtor'),
     '{PRODUCER_COMPANY}': String((producer as any)?.company_name ?? ''),
     '{CPF_CNPJ}': producerCnpj,
     '{CNPJ}': producerCnpj,
@@ -177,6 +177,14 @@ const applyTemplatePlaceholders = (
   });
 
   // Heuristic fill for common Portuguese labels if placeholders were not present
+  // Fill CONTRATANTE with company legal name
+  if ((producer as any)?.company_name) {
+    out = out.replace(/(CONTRATANTE\s*:\s*)([^\n]*)/gi, (m, p1, p2) => {
+      const empty = !p2 || /\[.*?\]/.test(p2) || p2.trim().length === 0;
+      return empty ? `${p1}${(producer as any).company_name}` : m;
+    });
+  }
+
   // Fill CPF/CNPJ
   if (producerCnpj) {
     out = out.replace(/(CPF\s*\/\s*CNPJ\s*:\s*)([^\n]*)/gi, (m, p1, p2) => {
@@ -380,7 +388,12 @@ const EventCalendar = () => {
           name: producer?.name || producer?.company_name || producer?.email || "Produtor sem nome",
           email: producer?.email || "",
           company_name: producer?.company_name ?? null,
-        };
+          // extra fields used by contract placeholders
+          cnpj: (producer as any)?.cnpj ?? null,
+          address: (producer as any)?.address ?? null,
+          business_address: (producer as any)?.business_address ?? null,
+          zip_code: (producer as any)?.zip_code ?? null,
+        } as any;
       })
       .filter(Boolean) as CalendarProducer[];
   }, [allProducers]);
@@ -415,8 +428,9 @@ const EventCalendar = () => {
   const resolveProducer = useCallback(
     async (producerId: string): Promise<CalendarProducer | null> => {
       if (!producerId) return null;
-      const local = calendarProducers.find((item) => item.id === producerId);
-      if (local) return local;
+      const local: any = calendarProducers.find((item) => item.id === producerId);
+      const hasFullData = local && (local.cnpj || local.address || local.business_address || local.zip_code);
+      if (hasFullData) return local as CalendarProducer;
 
       const { data, error } = await supabase
         .from("producers")
@@ -425,19 +439,20 @@ const EventCalendar = () => {
         .maybeSingle();
 
       if (error || !data) {
-        return null;
+        return local ?? null;
       }
 
-      return {
+      const enriched: any = {
         id: String(data.id),
-        name: data.name || data.company_name || data.email || "Produtor",
-        email: data.email ?? "",
-        company_name: data.company_name ?? null,
-        cnpj: (data as any)?.cnpj ?? null,
-        address: (data as any)?.address ?? null,
-        business_address: (data as any)?.business_address ?? null,
-        zip_code: (data as any)?.zip_code ?? null,
-      } as any;
+        name: data.name || data.company_name || data.email || (local?.name ?? "Produtor"),
+        email: data.email ?? local?.email ?? "",
+        company_name: data.company_name ?? local?.company_name ?? null,
+        cnpj: (data as any)?.cnpj ?? local?.cnpj ?? null,
+        address: (data as any)?.address ?? local?.address ?? null,
+        business_address: (data as any)?.business_address ?? local?.business_address ?? null,
+        zip_code: (data as any)?.zip_code ?? local?.zip_code ?? null,
+      };
+      return enriched as CalendarProducer;
     },
     [calendarProducers],
   );

@@ -76,28 +76,34 @@ interface EventContractModalProps {
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number.isFinite(value) ? value : 0);
 
+const formatLocalDate = (value?: string | null) => {
+  if (!value) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split('-').map((v) => Number(v));
+    const local = new Date(y, m - 1, d);
+    return local.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
+const formatLocalTime = (value?: string | null) => {
+  if (!value) return '';
+  if (/^\d{2}:\d{2}(:\d{2})?$/.test(value)) return value.slice(0,5);
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '';
+  return parsed.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+};
+
 const resolveEventDate = (event: CalendarEvent | null) => {
   if (!event?.event_date) {
-    return { date: "", time: "" };
+    return { date: '', time: '' };
   }
-
-  const parsed = new Date(event.event_date);
-  if (Number.isNaN(parsed.getTime())) {
-    return { date: event.event_date, time: "" };
-  }
-
-  const date = parsed.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-
-  const time = parsed.toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  return { date, time };
+  return {
+    date: formatLocalDate(event.event_date),
+    time: formatLocalTime((event as any)?.event_time || event.event_date),
+  };
 };
 
 export const EventContractModal: React.FC<EventContractModalProps> = ({
@@ -207,9 +213,12 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
                   <div className="rounded-xl border border-border bg-muted/10 p-4">
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                       <Users className="h-4 w-4" />
-                      DJ
+                      DJs
                     </div>
-                    <p className="mt-2 text-lg font-semibold">{dj?.name || dj?.artist_name || dj?.stage_name || "DJ não informado"}</p>
+                    <p className="mt-2 text-lg font-semibold">{Array.isArray((event as any)?.dj_names) && (event as any).dj_names.length
+                      ? (event as any).dj_names.join(', ')
+                      : (dj?.name || dj?.artist_name || dj?.stage_name || "DJ não informado")}
+                    </p>
                   </div>
                 </section>
 

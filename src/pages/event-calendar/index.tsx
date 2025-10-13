@@ -118,13 +118,32 @@ const applyTemplatePlaceholders = (
   producer: CalendarProducer | null,
 ): string => {
   if (!template) return "";
-  return template
-    .replace(/{DJ_NAME}/g, dj?.name ?? "DJ")
-    .replace(/{EVENT_DATE}/g, formatDateLabel(event.event_date))
-    .replace(/{EVENT_NAME}/g, event.title ?? "Evento")
-    .replace(/{VENUE}/g, event.location ?? "")
-    .replace(/{AMOUNT}/g, formatCurrencyLabel(ensureCurrencyNumber(contract.value)))
-    .replace(/{PRODUCER_NAME}/g, producer?.name ?? "Produtor");
+
+  const djNamesArr = Array.isArray((event as any)?.dj_names) && (event as any).dj_names.length
+    ? (event as any).dj_names
+    : (dj?.name ? [dj.name] : []);
+  const djNames = djNamesArr.filter(Boolean).map((s) => `${s}`.trim()).join(', ');
+  const firstDj = djNamesArr[0] || dj?.name || 'DJ';
+
+  const replacements: Record<string, string> = {
+    '{DJ_NAME}': String(firstDj || 'DJ'),
+    '{DJ_NAMES}': String(djNames || firstDj || 'DJ'),
+    '{EVENT_DATE}': formatDateLabel(event.event_date),
+    '{EVENT_NAME}': String(event.title ?? 'Evento'),
+    '{VENUE}': String(event.location ?? ''),
+    '{CITY}': String((event as any).city ?? ''),
+    '{AMOUNT}': formatCurrencyLabel(ensureCurrencyNumber(contract.value)),
+    '{PRODUCER_NAME}': String(producer?.name ?? 'Produtor'),
+    '{PRODUCER_COMPANY}': String((producer as any)?.company_name ?? ''),
+    '{COMMISSION_RATE}': (event as any)?.commission_rate != null ? `${(event as any).commission_rate}%` : '',
+    '{STATUS}': String(event.status ?? ''),
+  };
+
+  let out = template;
+  Object.entries(replacements).forEach(([key, val]) => {
+    out = out.replace(new RegExp(key, 'g'), val);
+  });
+  return out;
 };
 
 const buildSpecialRequirements = (contract: EventContractFormState): string =>

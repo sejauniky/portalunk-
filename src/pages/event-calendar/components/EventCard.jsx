@@ -86,12 +86,33 @@ const formatCurrency = (value) => {
   });
 };
 
-const resolveDjName = (event) => {
-  if (event?.djName) return event.djName;
-  if (event?.dj_name) return event.dj_name;
-  if (event?.dj?.name) return event.dj.name;
-  if (Array.isArray(event?.djs) && event.djs.length > 0) return event.djs[0];
-  return 'DJ não encontrado';
+const resolveDjNames = (event) => {
+  // Prefer explicit array provided by calendar mapping
+  if (Array.isArray(event?.dj_names) && event.dj_names.length > 0) {
+    return Array.from(new Set(event.dj_names.filter(Boolean))).join(', ');
+  }
+
+  const names = [];
+  // Primary DJ object on event
+  if (event?.dj) {
+    const n = event.dj.artist_name || event.dj.name || event.dj.stage_name || event.dj.email;
+    if (n) names.push(n);
+  }
+  // Relations from event_djs
+  if (Array.isArray(event?.event_djs)) {
+    event.event_djs.forEach((rel) => {
+      const d = rel?.dj || null;
+      const n = d?.artist_name || d?.name || d?.stage_name || d?.email;
+      if (n) names.push(n);
+    });
+  }
+  // Legacy arrays
+  if (Array.isArray(event?.djs)) {
+    event.djs.forEach((n) => { if (n) names.push(n); });
+  }
+
+  const unique = Array.from(new Set(names.filter(Boolean)));
+  return unique.length > 0 ? unique.join(', ') : 'DJ não encontrado';
 };
 
 const StatusBadge = ({ status }) => (
@@ -118,7 +139,7 @@ const EventCard = ({ event, onEdit, onOpenContract, onDelete }) => {
   const eventDateSource = event?.event_date || event?.date;
   const eventTime = event?.event_time || event?.time;
   const status = getStatusPresentation(event?.status);
-  const djName = resolveDjName(event);
+  const djNames = resolveDjNames(event);
   const bookingFee = event?.booking_fee ?? event?.budget ?? event?.fee ?? event?.cache_value;
   const formattedTime = formatTime(eventDateSource, eventTime);
   const showTime = formattedTime && formattedTime !== 'Horário não informado' && formattedTime !== '00:00';
@@ -155,7 +176,7 @@ const EventCard = ({ event, onEdit, onOpenContract, onDelete }) => {
 
           <div className="flex items-center gap-3 text-sm text-white/70">
             <Users className="h-4 w-4 text-white/60" />
-            <span>Dj {djName}</span>
+            <span>DJs {djNames}</span>
             {event?.dj?.genre && (
               <>
                 <span className="text-white/40">•</span>

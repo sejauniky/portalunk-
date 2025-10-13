@@ -152,22 +152,26 @@ const DJMediaGallery = ({ djId }) => {
   const handleGenerateShare = async (e) => {
     e?.preventDefault?.();
     if (!djId || !djName) return;
-    // senha deve ser exatamente 4 dígitos
+    const slugify = (s) => (s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-');
     if (!/^[0-9]{4}$/.test(sharePassword)) {
       toast.error('A senha deve conter exatamente 4 dígitos (ex: 1234)');
       return;
     }
     setShareGenerating(true);
     try {
-      // utilizar a Edge Function oficial para criar o link protegido
       const days = 5; // prazo padrão de validade
       const { data, error } = await supabase.functions.invoke('create-share-link', {
         body: { djId, days, pin: sharePassword },
       });
       if (error) throw error;
-      const shareToken = data?.share_token;
-      if (!shareToken) throw new Error('Falha ao obter token do link');
-      const link = `${window.location.origin}/share/${shareToken}`;
+      const slug = slugify(djName);
+      const link = `${window.location.origin}/share/${encodeURIComponent(slug)}`;
       setShareUrl(link);
       toast.success('Link gerado!');
     } catch (err) {

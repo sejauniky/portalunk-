@@ -573,7 +573,7 @@ const DJProfileProducer = () => {
 
   const hasHeroBackdropLink = Boolean(profileBackdropImage);
   const isHeroVideo = /\.(mp4|webm|ogg|mov|m4v)$/i.test(String(profileBackdropImage || ""));
-  const heroCardClasses = `relative flex flex-col overflow-hidden rounded-[32px] border border-white/10 bg-black/60 px-6 py-8 shadow-[0_24px_70px_-32px_rgba(33,151,189,0.55)] transition-colors duration-300 pointer-events-auto sm:px-10 sm:py-12${hasHeroBackdropLink ? " cursor-pointer" : ""}`;
+  const heroCardClasses = `relative flex flex-col overflow-hidden rounded-[32px] border border-white/10 bg-[rgba(0,0,0,0.78)] px-6 py-8 shadow-[0_24px_70px_-32px_rgba(33,151,189,0.55)] transition-colors duration-300 pointer-events-auto sm:px-10 sm:py-12${hasHeroBackdropLink ? " cursor-pointer" : ""}`;
   const heroCardContent = (
     <>
       {profileBackdropImage && (
@@ -755,19 +755,19 @@ const DJProfileProducer = () => {
           <TabsList className="grid w-full grid-cols-3 gap-3 mb-8">
           <TabsTrigger
             value="eventos"
-            className="rounded-lg border border-[rgba(33,151,189,0.36)] bg-[rgba(13,8,42,0.64)] px-3 py-2 text-sm font-semibold tracking-[0.1em] text-[rgba(73,184,189,1)] transition-all duration-300 hover:brightness-110 data-[state=inactive]:opacity-80 data-[state=active]:border-[rgba(73,184,189,0.45)] data-[state=active]:bg-[rgba(13,8,42,0.9)] data-[state=active]:text-[rgba(141,251,255,1)] data-[state=active]:shadow-[0_16px_40px_-24px_rgba(33,151,189,0.7)] lg:border-transparent lg:bg-transparent lg:text-muted-foreground lg:data-[state=inactive]:opacity-100 lg:data-[state=active]:border-white/10 lg:data-[state=active]:bg-[#131416] lg:data-[state=active]:text-white"
+            className="rounded-lg border border-[rgba(33,151,189,0.36)] bg-[rgba(13,8,42,0.64)] px-3 py-2 text-sm font-semibold tracking-[0.1em] text-[rgba(73,184,189,1)] transition-all duration-300 hover:brightness-110 data-[state=inactive]:opacity-80 data-[state=active]:border-[rgba(73,184,189,0.45)] data-[state=active]:bg-[rgba(5,3,19,0.96)] data-[state=active]:text-[rgba(141,251,255,1)] data-[state=active]:shadow-[0_16px_40px_-24px_rgba(33,151,189,0.7)] lg:border-transparent lg:bg-transparent lg:text-muted-foreground lg:data-[state=inactive]:opacity-100 lg:data-[state=active]:border-white/10 lg:data-[state=active]:bg-[#131416] lg:data-[state=active]:text-white"
           >
             Eventos
           </TabsTrigger>
           <TabsTrigger
             value="financeiro"
-            className="rounded-lg border border-[rgba(33,151,189,0.36)] bg-[rgba(13,8,42,0.64)] px-3 py-2 text-sm font-semibold tracking-[0.1em] text-[rgba(73,184,189,1)] transition-all duration-300 hover:brightness-110 data-[state=inactive]:opacity-80 data-[state=active]:border-[rgba(73,184,189,0.45)] data-[state=active]:bg-[rgba(13,8,42,0.9)] data-[state=active]:text-[rgba(141,251,255,1)] data-[state=active]:shadow-[0_16px_40px_-24px_rgba(33,151,189,0.7)] lg:border-transparent lg:bg-transparent lg:text-muted-foreground lg:data-[state=inactive]:opacity-100 lg:data-[state=active]:border-white/10 lg:data-[state=active]:bg-[#131416] lg:data-[state=active]:text-white"
+            className="rounded-lg border border-[rgba(33,151,189,0.36)] bg-[rgba(13,8,42,0.64)] px-3 py-2 text-sm font-semibold tracking-[0.1em] text-[rgba(73,184,189,1)] transition-all duration-300 hover:brightness-110 data-[state=inactive]:opacity-80 data-[state=active]:border-[rgba(73,184,189,0.45)] data-[state=active]:bg-[rgba(5,3,19,0.96)] data-[state=active]:text-[rgba(141,251,255,1)] data-[state=active]:shadow-[0_16px_40px_-24px_rgba(33,151,189,0.7)] lg:border-transparent lg:bg-transparent lg:text-muted-foreground lg:data-[state=inactive]:opacity-100 lg:data-[state=active]:border-white/10 lg:data-[state=active]:bg-[#131416] lg:data-[state=active]:text-white"
           >
             Financeiro
           </TabsTrigger>
           <TabsTrigger
             value="midias"
-            className="rounded-lg border border-[rgba(33,151,189,0.36)] bg-[rgba(13,8,42,0.64)] px-3 py-2 text-sm font-semibold tracking-[0.1em] text-[rgba(73,184,189,1)] transition-all duration-300 hover:brightness-110 data-[state=inactive]:opacity-80 data-[state=active]:border-[rgba(73,184,189,0.45)] data-[state=active]:bg-[rgba(13,8,42,0.9)] data-[state=active]:text-[rgba(141,251,255,1)] data-[state=active]:shadow-[0_16px_40px_-24px_rgba(33,151,189,0.7)] lg:border-transparent lg:bg-transparent lg:text-muted-foreground lg:data-[state=inactive]:opacity-100 lg:data-[state=active]:border-white/10 lg:data-[state=active]:bg-[#131416] lg:data-[state=active]:text-white"
+            className="rounded-lg border border-[rgba(33,151,189,0.36)] bg-[rgba(13,8,42,0.64)] px-3 py-2 text-sm font-semibold tracking-[0.1em] text-[rgba(73,184,189,1)] transition-all duration-300 hover:brightness-110 data-[state=inactive]:opacity-80 data-[state=active]:border-[rgba(73,184,189,0.45)] data-[state=active]:bg-[rgba(5,3,19,0.96)] data-[state=active]:text-[rgba(141,251,255,1)] data-[state=active]:shadow-[0_16px_40px_-24px_rgba(33,151,189,0.7)] lg:border-transparent lg:bg-transparent lg:text-muted-foreground lg:data-[state=inactive]:opacity-100 lg:data-[state=active]:border-white/10 lg:data-[state=active]:bg-[#131416] lg:data-[state=active]:text-white"
           >
             Mídias
           </TabsTrigger>

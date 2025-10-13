@@ -143,7 +143,7 @@ const categoryOptions = [
   { value: "set_release", label: "Lançamento" },
 ];
 
-// Funções de inicialização sem dados mocados (limpos)
+// Funç��es de inicialização sem dados mocados (limpos)
 const getInitialPersonalItems = (): AgendaItem[] => [];
 const getInitialContentItems = (): AgendaItem[] => [];
 const getInitialDjs = () => [];
@@ -1445,8 +1445,21 @@ const AgendaManager = () => {
         <TabsContent value="djs" className="mt-6">
           <DjAgendaSection djs={djs} contentItems={contentItems} />
         </TabsContent>
+
+        <TabsContent value="notes" className="mt-6">
+          {notesLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Carregando notas...</div>
+          ) : (
+            <NotesSection
+              notes={notes}
+              onCreate={createNote}
+              onUpdate={updateNote}
+              onDelete={deleteNote}
+            />
+          )}
+        </TabsContent>
       </Tabs>
-      
+
       <ToastContainer toasts={toasts} />
     </div>
   );

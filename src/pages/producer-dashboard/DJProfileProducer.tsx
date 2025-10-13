@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ContractModal from "@/pages/event-calendar/components/ContractModal";
 import EventModal from "./components/EventModal";
+import { eventService } from "@/services/supabaseService";
 
 interface DJ {
   id: string;

@@ -82,7 +82,7 @@ export function Sidebar({ className }: SidebarProps) {
               <img
                 src="https://cdn.builder.io/api/v1/image/assets%2F3d62991cf83740faa291d13d959ad05c%2Fc783b63f88704338ac16296d2ac24bd7?format=webp&width=800"
                 alt="Disco de vinil Portal UNK"
-                className="h-6 w-6 object-contain drop-shadow"
+                className="h-8 w-8 object-contain drop-shadow"
                 draggable={false}
               />
             </div>

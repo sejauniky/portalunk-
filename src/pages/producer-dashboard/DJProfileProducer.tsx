@@ -67,6 +67,7 @@ interface Event {
   fee: number;
   payment_status: string | null;
   contract_attached?: boolean | null;
+  contract_content?: string | null;
   cache_value?: number | string | null;
   budget?: number | string | null;
 }

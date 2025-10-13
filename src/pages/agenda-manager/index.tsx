@@ -1389,7 +1389,7 @@ const AgendaManager = () => {
       </header>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-2xl">
+        <TabsList className="grid w-full grid-cols-4 max-w-3xl">
           <TabsTrigger value="personal" className="gap-2">
             <CalendarRange className="h-4 w-4" /> Agenda Pessoal
           </TabsTrigger>

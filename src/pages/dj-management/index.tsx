@@ -448,12 +448,6 @@ const DJsPage = () => {
                     {dj.soundcloud_url && <Headphones className="h-4 w-4 text-orange-500" />}
                   </div>
 
-                  {formattedPrice && (
-                    <div className="mb-4">
-                      <p className="text-sm text-muted-foreground">Cachê Base</p>
-                      <p className="text-lg font-semibold text-foreground">{formattedPrice}</p>
-                    </div>
-                  )}
 
                   <div className="flex items-center justify-between">
                     <Link href={`/dj-profile/${dj.id}`}>

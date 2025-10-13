@@ -5,7 +5,7 @@ import { Icon } from '../../components/Icon';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
-import { producerService, storageService } from '../../services/supabaseService';
+import { producerService, storageService, eventService } from '../../services/supabaseService';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '../../hooks/use-auth';
 import { ProducerCreateModal } from './components/ProducerCreateModal';
@@ -156,6 +156,9 @@ const ProducerManagement = () => {
   const isAdmin = userProfile?.role === 'admin';
 
   const { data: producers = [], loading: loadingProducers, refetch: refetchProducers, error: producersError } = useSupabaseData(producerService, 'getAll', [], []);
+
+  // Fetch events to compute per-producer event counts
+  const { data: events = [], loading: loadingEvents, refetch: refetchEvents, error: eventsError } = useSupabaseData(eventService, 'getAll', [], []);
 
   const [selected, setSelected] = useState(null);
   const [editData, setEditData] = useState(null);
@@ -392,6 +395,7 @@ const ProducerManagement = () => {
         company_name: updates.company_name,
         cnpj: updates.cnpj,
         address: updates.address,
+        business_address: updates.address,
         contact_person: updates.contact_person,
         is_active: updates.is_active,
         avatar_url: updates.avatar_url,

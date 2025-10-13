@@ -156,7 +156,6 @@ const EventFormDialog = ({
 
     if (!values.title.trim()) nextErrors.title = "Informe o título";
     if (!values.event_date) nextErrors.event_date = "Informe a data";
-    if (!values.location.trim()) nextErrors.location = "Informe o local";
     if (!values.city.trim()) nextErrors.city = "Informe a cidade";
     if (!values.status) nextErrors.status = "Informe o status";
     if (!values.dj_ids || values.dj_ids.length === 0) nextErrors.dj_ids = "Selecione pelo menos um DJ";
@@ -227,17 +226,6 @@ const EventFormDialog = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="location">Local</Label>
-              <Input
-                id="location"
-                value={values.location}
-                onChange={(event) => handleChange("location", event.target.value)}
-                disabled={readOnly}
-                aria-invalid={Boolean(errors.location)}
-              />
-              {errors.location && <p className="text-sm text-destructive">{errors.location}</p>}
-            </div>
             <div className="grid gap-2">
               <Label htmlFor="city">Cidade</Label>
               <Input

@@ -30,7 +30,7 @@ import { normalizeSocialUrl } from "@/utils/social";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import ContractModal from "@/pages/event-calendar/components/ContractModal";
+import { ContractViewModal } from "@/pages/event-calendar/components/ContractViewModal";
 import EventModal from "./components/EventModal";
 import { eventService } from "@/services/supabaseService";
 
@@ -88,6 +88,7 @@ const DJProfileProducer = () => {
 
   const [contractModalOpen, setContractModalOpen] = useState(false);
   const [selectedEventForContract, setSelectedEventForContract] = useState<Event | null>(null);
+  const [contractInstance, setContractInstance] = useState<{ id: string; content: string; signature_status: string } | null>(null);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [isNarrowViewport, setIsNarrowViewport] = useState(false);
@@ -823,9 +824,24 @@ const DJProfileProducer = () => {
                               <div className="md:col-span-3 flex flex-col items-start md:items-end gap-2">
                                 <EventContractButton
                                   event={event}
-                                  onOpen={(currentEvent) => {
+                                  onOpen={async (currentEvent) => {
                                     setSelectedEventForContract(currentEvent);
-                                    setContractModalOpen(true);
+                                    try {
+                                      const { data, error } = await supabase
+                                        .from("contract_instances")
+                                        .select("id, contract_content, signature_status")
+                                        .eq("event_id", currentEvent.id)
+                                        .eq("dj_id", djId)
+                                        .maybeSingle();
+                                      if (error || !data) {
+                                        toast({ title: "Contrato não disponível", description: "Nenhuma instância de contrato encontrada para este evento.", variant: "destructive" });
+                                        return;
+                                      }
+                                      setContractInstance({ id: String(data.id), content: data.contract_content || "", signature_status: data.signature_status || "pending" });
+                                      setContractModalOpen(true);
+                                    } catch (e) {
+                                      toast({ title: "Erro", description: "Falha ao abrir contrato.", variant: "destructive" });
+                                    }
                                   }}
                                 />
                                 <div className="mt-2">
@@ -974,17 +990,20 @@ const DJProfileProducer = () => {
         </Tabs>
       </main>
 
-      <ContractModal
-        isOpen={contractModalOpen}
-        onClose={() => {
-          setContractModalOpen(false);
-          setSelectedEventForContract(null);
+      <ContractViewModal
+        open={contractModalOpen}
+        onOpenChange={(open) => {
+          setContractModalOpen(open);
+          if (!open) {
+            setSelectedEventForContract(null);
+            setContractInstance(null);
+          }
         }}
-        event={selectedEventForContract}
+        contractId={contractInstance?.id || ""}
+        contractContent={contractInstance?.content || ""}
+        eventName={selectedEventForContract?.event_name || (selectedEventForContract as any)?.title || "Evento"}
+        signatureStatus={contractInstance?.signature_status || "pending"}
         onSign={async () => {
-          setContractModalOpen(false);
-          setSelectedEventForContract(null);
-          toast({ title: "Contrato assinado", description: "O contrato foi assinado com sucesso!" });
           queryClient.invalidateQueries({ queryKey: ["producer-dj-events", djId, producerId] });
         }}
       />

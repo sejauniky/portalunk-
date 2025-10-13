@@ -139,16 +139,18 @@ const applyTemplatePlaceholders = (
     .filter((s) => s.length > 0);
   const producerAddress = producerAddrParts.join(' - ');
 
+  const eventDateLabel = formatDateLabel(event.event_date);
+
   const replacements: Record<string, string> = {
     '{DJ_NAME}': String(firstDj || 'DJ'),
     '{DJ_NAMES}': String(djNames || firstDj || 'DJ'),
-    '{EVENT_DATE}': formatDateLabel(event.event_date),
+    '{EVENT_DATE}': eventDateLabel,
     '{EVENT_NAME}': String(event.title ?? 'Evento'),
     '{VENUE}': String(event.location ?? ''),
     '{CITY}': String((event as any).city ?? ''),
     '{ENDERECO}': eventAddress,
     '{AMOUNT}': formatCurrencyLabel(ensureCurrencyNumber(contract.value)),
-    '{PRODUCER_NAME}': String(producer?.name ?? 'Produtor'),
+    '{PRODUCER_NAME}': String((producer as any)?.company_name ?? producer?.name ?? 'Produtor'),
     '{PRODUCER_COMPANY}': String((producer as any)?.company_name ?? ''),
     '{CPF_CNPJ}': producerCnpj,
     '{CNPJ}': producerCnpj,
@@ -160,12 +162,61 @@ const applyTemplatePlaceholders = (
     '{PRODUCER_ADDRESS}': producerAddress,
     '{COMMISSION_RATE}': (event as any)?.commission_rate != null ? `${(event as any).commission_rate}%` : '',
     '{STATUS}': String(event.status ?? ''),
+    '{DATA DO PAGAMENTO}': eventDateLabel,
   };
 
   let out = template;
+
+  // Apply replacements for both curly-brace and square-bracket variants
   Object.entries(replacements).forEach(([key, val]) => {
-    out = out.replace(new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), val);
+    const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out.replace(new RegExp(escaped, 'g'), val);
+    const bracketKey = key.replace('{', '[').replace('}', ']');
+    const bracketEscaped = bracketKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out.replace(new RegExp(bracketEscaped, 'g'), val);
   });
+
+  // Heuristic fill for common Portuguese labels if placeholders were not present
+  // Fill CONTRATANTE with company legal name
+  if ((producer as any)?.company_name) {
+    out = out.replace(/(CONTRATANTE\s*:\s*)([^\n]*)/gi, (m, p1, p2) => {
+      const empty = !p2 || /\[.*?\]/.test(p2) || p2.trim().length === 0;
+      return empty ? `${p1}${(producer as any).company_name}` : m;
+    });
+  }
+
+  // Fill CPF/CNPJ
+  if (producerCnpj) {
+    out = out.replace(/(CPF\s*\/\s*CNPJ\s*:\s*)([^\n]*)/gi, (m, p1, p2) => {
+      const hasNumber = /\d/.test(p2);
+      const hasText = p2 && p2.trim().length > 0 && !/\[.*?\]/.test(p2);
+      return hasNumber || hasText ? m : `${p1}${producerCnpj}`;
+    });
+    out = out.replace(/(CNPJ\s*:\s*)([^\n]*)/gi, (m, p1, p2) => {
+      const hasNumber = /\d/.test(p2);
+      const hasText = p2 && p2.trim().length > 0 && !/\[.*?\]/.test(p2);
+      return hasNumber || hasText ? m : `${p1}${producerCnpj}`;
+    });
+  }
+
+  // Fill ENDEREÇO/ENDERECO
+  if (producerAddress) {
+    out = out.replace(/(ENDERE[ÇC]O\s*:\s*)([^\n]*)/gi, (m, p1, p2) => {
+      const hasText = p2 && p2.trim().length > 0 && !/\[.*?\]/.test(p2);
+      return hasText ? m : `${p1}${producerAddress}`;
+    });
+  }
+
+  // Fill DATA DO PAGAMENTO if appears as a label without placeholder
+  if (eventDateLabel) {
+    out = out.replace(/(DATA\s+DO\s+PAGAMENTO\s*:\s*)([^\n]*)/gi, (m, p1, p2) => {
+      const hasDate = /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(p2) || p2.trim().length > 0;
+      return hasDate ? m : `${p1}${eventDateLabel}`;
+    });
+    // Also replace bare [DATA DO PAGAMENTO] occurrences
+    out = out.replace(/\[\s*DATA\s+DO\s+PAGAMENTO\s*\]/gi, eventDateLabel);
+  }
+
   return out;
 };
 
@@ -337,7 +388,12 @@ const EventCalendar = () => {
           name: producer?.name || producer?.company_name || producer?.email || "Produtor sem nome",
           email: producer?.email || "",
           company_name: producer?.company_name ?? null,
-        };
+          // extra fields used by contract placeholders
+          cnpj: (producer as any)?.cnpj ?? null,
+          address: (producer as any)?.address ?? null,
+          business_address: (producer as any)?.business_address ?? null,
+          zip_code: (producer as any)?.zip_code ?? null,
+        } as any;
       })
       .filter(Boolean) as CalendarProducer[];
   }, [allProducers]);
@@ -372,8 +428,9 @@ const EventCalendar = () => {
   const resolveProducer = useCallback(
     async (producerId: string): Promise<CalendarProducer | null> => {
       if (!producerId) return null;
-      const local = calendarProducers.find((item) => item.id === producerId);
-      if (local) return local;
+      const local: any = calendarProducers.find((item) => item.id === producerId);
+      const hasFullData = local && (local.cnpj || local.address || local.business_address || local.zip_code);
+      if (hasFullData) return local as CalendarProducer;
 
       const { data, error } = await supabase
         .from("producers")
@@ -382,19 +439,20 @@ const EventCalendar = () => {
         .maybeSingle();
 
       if (error || !data) {
-        return null;
+        return local ?? null;
       }
 
-      return {
+      const enriched: any = {
         id: String(data.id),
-        name: data.name || data.company_name || data.email || "Produtor",
-        email: data.email ?? "",
-        company_name: data.company_name ?? null,
-        cnpj: (data as any)?.cnpj ?? null,
-        address: (data as any)?.address ?? null,
-        business_address: (data as any)?.business_address ?? null,
-        zip_code: (data as any)?.zip_code ?? null,
-      } as any;
+        name: data.name || data.company_name || data.email || (local?.name ?? "Produtor"),
+        email: data.email ?? local?.email ?? "",
+        company_name: data.company_name ?? local?.company_name ?? null,
+        cnpj: (data as any)?.cnpj ?? local?.cnpj ?? null,
+        address: (data as any)?.address ?? local?.address ?? null,
+        business_address: (data as any)?.business_address ?? local?.business_address ?? null,
+        zip_code: (data as any)?.zip_code ?? local?.zip_code ?? null,
+      };
+      return enriched as CalendarProducer;
     },
     [calendarProducers],
   );
@@ -858,6 +916,35 @@ const EventCalendar = () => {
       const saved = await handleContractSave();
       if (!saved) {
         return;
+      }
+
+      // Ensure there is at least one contract instance for this event and DJs
+      try {
+        const { data: existing } = await supabase
+          .from('contract_instances')
+          .select('id')
+          .eq('event_id', contractEvent.id)
+          .limit(1);
+
+        if (!existing || existing.length === 0) {
+          const djIds = (contractEvent as any)?.dj_ids && Array.isArray((contractEvent as any).dj_ids) && (contractEvent as any).dj_ids.length
+            ? (contractEvent as any).dj_ids
+            : ((contractEvent as any)?.dj_id ? [(contractEvent as any).dj_id] : []);
+          const producerId = (contractEvent as any)?.producer_id || '';
+
+          if (djIds.length > 0 && producerId) {
+            await supabase.functions.invoke('create-event-contracts', {
+              body: {
+                eventId: contractEvent.id,
+                djIds,
+                contractType: contractState.templateId,
+                producerId,
+              },
+            });
+          }
+        }
+      } catch (fnErr) {
+        console.warn('Falha ao garantir instâncias de contrato (não fatal):', fnErr);
       }
 
       const { error } = await supabase

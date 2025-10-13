@@ -203,14 +203,6 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
 
                   <div className="rounded-xl border border-border bg-muted/10 p-4">
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
-                      Local
-                    </div>
-                    <p className="mt-2 text-lg font-semibold">{event.location || "Local não informado"}</p>
-                  </div>
-
-                  <div className="rounded-xl border border-border bg-muted/10 p-4">
-                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                       <Users className="h-4 w-4" />
                       DJs
                     </div>

@@ -64,10 +64,20 @@ export const ContractViewModal = ({
           // Attempt to create via edge function first
           let created = false;
           if (ownerProducerId) {
-            const invokeRes = await supabase.functions.invoke('create-event-contracts', {
-              body: { eventId, djIds: [djId], contractType, producerId: ownerProducerId }
-            });
-            if (!(invokeRes as any)?.error) {
+            let invokeOk = false;
+            try {
+              const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000));
+              const res = await Promise.race([
+                supabase.functions.invoke('create-event-contracts', {
+                  body: { eventId, djIds: [djId], contractType, producerId: ownerProducerId }
+                }),
+                timeout,
+              ]) as any;
+              if (!res?.error) invokeOk = true;
+            } catch (_) {
+              invokeOk = false;
+            }
+            if (invokeOk) {
               const retry = await supabase
                 .from("contract_instances")
                 .select("id")

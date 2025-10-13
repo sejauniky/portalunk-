@@ -20,6 +20,7 @@ import {
   ClipboardList,
   Plus,
   Music,
+  FileText,
 } from "lucide-react";
 import Input from "@/components/ui/input";
 import { useDJs } from "@/hooks/useDJs";

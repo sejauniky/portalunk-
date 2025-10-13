@@ -5,12 +5,12 @@ import { Icon } from '../../components/Icon';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
-import { producerService, djService, storageService, eventService } from '../../services/supabaseService';
+import { producerService, storageService } from '../../services/supabaseService';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '../../hooks/use-auth';
 import { ProducerCreateModal } from './components/ProducerCreateModal';
 
-const ProducerCard = ({ producer, eventCount, onView, onEdit, onChangePassword, onSelectDJ, onDelete, isDeleting }) => {
+const ProducerCard = ({ producer, eventCount, onView, onEdit, onChangePassword, onDelete, isDeleting }) => {
   const rawAvatar = producer?.avatar_url || producer?.profile_image_url || '';
 
   const getAvatarUrl = (raw) => {
@@ -34,17 +34,16 @@ const ProducerCard = ({ producer, eventCount, onView, onEdit, onChangePassword, 
   const totalEventsSource = eventCount ?? producer?.total_events ?? producer?.events_count ?? producer?.event_count ?? (Array.isArray(producer?.events) ? producer?.events.length : null);
   const totalEventsNumber = typeof totalEventsSource === 'number' ? totalEventsSource : Number(totalEventsSource);
   const totalEvents = Number.isFinite(totalEventsNumber) ? Math.max(0, totalEventsNumber) : null;
-  const formattedLocation = [producer?.city, producer?.state].filter(Boolean).join(', ') || producer?.location || '';
+  const formattedLocation = '' /* endereço não exibido no card */;
   const contactName = producer?.contact_person || producer?.responsible || producer?.manager || '';
   const infoItems = [
     { icon: 'Mail', value: producer?.email },
     { icon: 'Phone', value: producer?.phone },
-    { icon: 'MapPin', value: formattedLocation },
     { icon: 'User', value: contactName },
   ].filter((item) => item.value);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-br from-[#0d111f] via-[#0f1629] to-[#070915] p-6 text-foreground shadow-[0_30px_60px_-35px_rgba(15,23,42,0.9)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_35px_70px_-30px_rgba(59,130,246,0.35)]">
+    <div className="relative overflow-hidden rounded-3xl border border-[rgba(60,24,142,0.73)] bg-gradient-to-br from-[#0d111f] via-[#0f1629] to-[#070915] p-6 text-foreground shadow-[1px_1px_12px_0_rgba(80,44,110,1)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_35px_70px_-30px_rgba(59,130,246,0.35)]">
       <div className="relative flex flex-col gap-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
@@ -58,10 +57,10 @@ const ProducerCard = ({ producer, eventCount, onView, onEdit, onChangePassword, 
 
             <div className="min-w-0">
               <h3 className="text-xl font-semibold leading-tight text-white truncate">
-                {producer?.company_name || producer?.name || 'Produtor'}
+                {producer?.name || producer?.company_name || 'Produtor'}
               </h3>
-              <p className="mt-1 text-sm text-slate-300/80 truncate">
-                {producer?.name && producer?.company_name ? producer?.name : producer?.email || producer?.company_name || '-'}
+              <p className="mt-1 text-[8px] text-slate-300/80 truncate">
+                {producer?.company_name || producer?.email || '-'}
               </p>
             </div>
           </div>
@@ -73,8 +72,8 @@ const ProducerCard = ({ producer, eventCount, onView, onEdit, onChangePassword, 
               </span>
             )}
             <div className="text-right">
-              <span className="block text-xs font-medium uppercase tracking-wide text-slate-300/60">Eventos</span>
-              <span className="text-lg font-semibold text-white">
+              <span className="block text-[8px] font-medium uppercase tracking-wide text-slate-300/60">Eventos</span>
+              <span className="text-[16px] font-semibold text-white">
                 {totalEvents === null ? '—' : `${totalEvents} evento${totalEvents === 1 ? '' : 's'}`}
               </span>
             </div>
@@ -129,16 +128,8 @@ const ProducerCard = ({ producer, eventCount, onView, onEdit, onChangePassword, 
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
-              className="w-full rounded-xl border border-primary/30 bg-primary/10 text-slate-100 hover:border-primary/50 hover:bg-primary/20 sm:w-auto"
-              onClick={() => onSelectDJ(producer)}
-              icon={<Icon name="Users" size={16} className="text-primary" />}
-            >
-              Selecionar DJ
-            </Button>
-            <Button
-              size="sm"
               variant="outline"
-              className="w-full rounded-xl border border-rose-400/40 text-rose-200 hover:bg-rose-500/15 sm:w-auto"
+              className="w-full rounded-xl border border-rose-400/40 text-rose-200 bg-[rgba(208,2,27,0.21)] hover:bg-rose-500/15 sm:w-auto"
               onClick={() => onDelete?.(producer)}
               icon={<Icon name="Trash2" size={16} className="text-rose-400" />}
               loading={isDeleting}
@@ -155,8 +146,8 @@ const ProducerCard = ({ producer, eventCount, onView, onEdit, onChangePassword, 
 
 const DetailRow = ({ label, value }) => (
   <div className="flex justify-between py-2 border-b border-border/60">
-    <span className="text-sm text-muted-foreground">{label}</span>
-    <span className="text-sm text-foreground max-w-[60%] text-right truncate">{value || '-'}</span>
+    <span className="text-sm text-muted-foreground pl-2 sm:pl-0">{label}</span>
+    <span className="text-sm text-foreground max-w-[60%] text-right truncate pr-4 sm:pr-0 ml-0.5">{value || '-'}</span>
   </div>
 );
 
@@ -165,13 +156,10 @@ const ProducerManagement = () => {
   const isAdmin = userProfile?.role === 'admin';
 
   const { data: producers = [], loading: loadingProducers, refetch: refetchProducers, error: producersError } = useSupabaseData(producerService, 'getAll', [], []);
-  const { data: djs = [], loading: loadingDjs } = useSupabaseData(djService, 'getAll', [], []);
-  const { data: events = [] } = useSupabaseData(eventService, 'getAll', [], []);
 
   const [selected, setSelected] = useState(null);
   const [editData, setEditData] = useState(null);
   const [passwordFor, setPasswordFor] = useState(null);
-  const [selectDJFor, setSelectDJFor] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const [evaluationRating, setEvaluationRating] = useState(null);
@@ -188,10 +176,8 @@ const ProducerManagement = () => {
     email: '',
     phone: '',
     company_name: '',
-    company_document: '',
+    cnpj: '',
     address: '',
-    city: '',
-    state: '',
     contact_person: '',
     is_active: true,
     avatar_url: ''
@@ -210,10 +196,8 @@ const ProducerManagement = () => {
         email: editData?.email || '',
         phone: editData?.phone || '',
         company_name: editData?.company_name || '',
-        company_document: editData?.company_document || '',
+        cnpj: editData?.cnpj || '',
         address: editData?.address || '',
-        city: editData?.city || '',
-        state: editData?.state || '',
         contact_person: editData?.contact_person || '',
         is_active: editData?.is_active ?? true,
         avatar_url: editData?.avatar_url || editData?.profile_image_url || ''
@@ -406,10 +390,8 @@ const ProducerManagement = () => {
         email: updates.email,
         phone: updates.phone,
         company_name: updates.company_name,
-        company_document: updates.company_document,
+        cnpj: updates.cnpj,
         address: updates.address,
-        city: updates.city,
-        state: updates.state,
         contact_person: updates.contact_person,
         is_active: updates.is_active,
         avatar_url: updates.avatar_url,
@@ -505,16 +487,6 @@ const ProducerManagement = () => {
     }
   };
 
-  const onSubmitSelectDJ = async (producer, djId) => {
-    const res = await producerService.setDashboardDJ(producer?.id, djId);
-    if (res?.error) {
-      alert(res.error);
-    } else {
-      alert('DJ definido para o dashboard do produtor');
-      setSelectDJFor(null);
-      refetchProducers();
-    }
-  };
 
   const handleDeleteProducer = async (producer) => {
     const profileId = producer?.id ?? producer?.profile_id;
@@ -579,7 +551,7 @@ const ProducerManagement = () => {
 
 
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-6 md:p-8 border border-white/10">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground gradient-text">Produtores</h1>
@@ -649,7 +621,6 @@ const ProducerManagement = () => {
                     onView={setSelected}
                     onEdit={setEditData}
                     onChangePassword={setPasswordFor}
-                    onSelectDJ={setSelectDJFor}
                     onDelete={handleDeleteProducer}
                     isDeleting={isDeleting}
                   />
@@ -660,21 +631,36 @@ const ProducerManagement = () => {
 
         {/* Details Modal */}
         {selected && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-            <div className="bg-card border border-border rounded-lg w-full max-w-lg p-6">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[9999] p-4">
+            <div className="bg-[#151516]/80 border border-[rgba(130,90,195,1)] rounded-xl w-full max-w-lg p-6 shadow-[1px_1px_23px_0_rgba(17,21,119,1)]">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-foreground">Detalhes do Produtor</h2>
                 <Button variant="ghost" size="icon" onClick={() => setSelected(null)}><Icon name="X" size={18} /></Button>
               </div>
-              <div className="space-y-2">
-                <DetailRow label="Nome" value={selected?.name} />
-                <DetailRow label="Empresa" value={selected?.company_name} />
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-16 h-16 rounded-xl overflow-hidden border border-border bg-muted/20 flex items-center justify-center">
+                  {selected?.avatar_url || selected?.profile_image_url ? (
+                    <img src={selected?.avatar_url || selected?.profile_image_url} alt={selected?.name || selected?.company_name || 'Produtor'} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xl font-semibold text-muted-foreground">
+                      {(selected?.name || selected?.company_name || 'P').charAt(0)}
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xl font-semibold text-foreground truncate">{selected?.name || selected?.company_name || 'Produtor'}</div>
+                  {selected?.company_name && (selected?.company_name !== (selected?.name || '')) && (
+                    <div className="text-sm text-muted-foreground truncate">{selected?.company_name}</div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <DetailRow label="Email" value={selected?.email} />
                 <DetailRow label="Telefone" value={selected?.phone} />
-                <DetailRow label="CNPJ" value={selected?.company_document} />
-                <DetailRow label="Cidade" value={selected?.city} />
-                <DetailRow label="Estado" value={selected?.state} />
+                <DetailRow label="CNPJ" value={selected?.cnpj} />
                 <DetailRow label="Contato" value={selected?.contact_person} />
+                <DetailRow label="Endereço" value={selected?.address} />
               </div>
               <div className="mt-6 flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setSelected(null)}>Fechar</Button>
@@ -732,10 +718,8 @@ const ProducerManagement = () => {
                 <Input value={formData?.email} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} placeholder="Email *" type="email" />
                 <Input value={formData?.phone} onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))} placeholder="Telefone" />
                 <Input value={formData?.company_name} onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))} placeholder="Nome da Empresa" />
-                <Input value={formData?.company_document} onChange={(e) => setFormData(prev => ({ ...prev, company_document: e.target.value }))} placeholder="CNPJ" />
+                <Input value={formData?.cnpj} onChange={(e) => setFormData(prev => ({ ...prev, cnpj: e.target.value }))} placeholder="CNPJ" />
                 <Input value={formData?.contact_person} onChange={(e) => setFormData(prev => ({ ...prev, contact_person: e.target.value }))} placeholder="Pessoa de Contato" />
-                <Input value={formData?.city} onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))} placeholder="Cidade" />
-                <Input value={formData?.state} onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))} placeholder="Estado" />
               </div>
 
               <div className="mt-4">
@@ -782,31 +766,6 @@ const ProducerManagement = () => {
           </div>
         )}
 
-        {/* Select DJ Modal */}
-        {selectDJFor && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-            <div className="bg-card border border-border rounded-lg w-full max-w-md p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-foreground">Selecionar DJ para o dashboard</h2>
-                <Button variant="ghost" size="icon" onClick={() => setSelectDJFor(null)}><Icon name="X" size={18} /></Button>
-              </div>
-              {loadingDjs ? (
-                <div className="flex justify-center py-8">
-                  <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-80 overflow-y-auto">
-                  {(djs || []).map((dj) => (
-                    <button key={dj?.id} className="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-muted text-left" onClick={() => onSubmitSelectDJ(selectDJFor, dj?.id)}>
-                      <span className="text-sm text-foreground">{dj?.name}</span>
-                      <Icon name="ChevronRight" size={16} className="text-muted-foreground" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
   );
 };

@@ -132,9 +132,9 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(value) => (value ? undefined : onClose())}>
-      <DialogContent className="w-full max-w-6xl border border-border bg-background/95 p-0 text-foreground shadow-glass transition-all sm:rounded-xl [&>button]:hidden">
-        <div className="flex h-full max-h-[657px] flex-col pr-[199px] mr-[-4px]">
-          <header className="flex items-start justify-between gap-4 border-b border-border bg-background/95 py-[20px] pl-[30px] pr-[104px] w-[829px] mr-[9px]">
+      <DialogContent className="w-[90vw] sm:w-full sm:max-w-4xl border border-border bg-background/95 p-0 text-foreground shadow-glass transition-all sm:rounded-xl [&>button]:hidden max-h-[85vh]">
+        <div className="flex h-full flex-col">
+          <header className="flex items-start justify-between gap-3 border-b border-border bg-background/95 px-4 py-3 sm:px-6 sm:py-4">
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <FileText className="h-5 w-5" />
@@ -191,7 +191,7 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
             </div>
           ) : (
             <ScrollArea className="flex-1">
-              <div className="space-y-6 text-[11px] w-[1199px] h-[539.3px] max-w-[849px] min-h-[22px] mr-[99px] pr-[16px] pl-[29px] pt-[17px] pb-[19px]">
+              <div className="space-y-6 text-sm px-4 sm:px-6 py-4">
                 <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                   <div className="rounded-xl border border-border bg-muted/10 p-4">
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -222,7 +222,7 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
                 </section>
 
                 <section>
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <h3 className="text-sm font-medium text-muted-foreground">Contrato</h3>
                       <div className="text-sm text-muted-foreground">Valor: {formattedValue}</div>
@@ -230,7 +230,7 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
 
                     <div className="flex items-center gap-2">
                       <Select onValueChange={(v) => onTemplateChange(v)} value={contract.templateId} disabled={disableTemplateSelection}>
-                        <SelectTrigger className="w-[200px]">
+                        <SelectTrigger className="w-full sm:w-[200px]">
                           <SelectValue placeholder="Selecionar template" />
                         </SelectTrigger>
                         <SelectContent>
@@ -251,7 +251,7 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
                   </div>
 
                   <div className="mt-4">
-                    <Textarea className="min-h-[55vh]" value={contract.content} onChange={(e) => onChange({ content: e.target.value })} readOnly={!isEditing} />
+                    <Textarea className="min-h-[35vh] sm:min-h-[50vh]" value={contract.content} onChange={(e) => onChange({ content: e.target.value })} readOnly={!isEditing} />
                   </div>
                 </section>
               </div>

@@ -1,52 +1,16 @@
 {
-  "name": "Portal UNK - Assessoria Musical",
-  "short_name": "Portal UNK",
-  "description": "Plataforma completa de assessoria musical para gerenciar DJs, eventos e produtores",
+  "name": "Portal UNK",
+  "short_name": "UNK",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0A0B0E",
   "theme_color": "#0A0B0E",
-  "orientation": "portrait-primary",
-  "scope": "/",
+  "description": "Assessoria musical profissional para DJs, eventos e produtores.",
   "icons": [
     {
-      "src": "/logo.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
     }
-  ],
-  "categories": ["music", "business", "productivity"],
-  "screenshots": [
-    {
-      "src": "/placeholder.svg",
-      "sizes": "1280x720",
-      "type": "image/svg+xml",
-      "form_factor": "wide"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Dashboard",
-      "short_name": "Dashboard",
-      "description": "Acessar dashboard principal",
-      "url": "/",
-      "icons": [{ "src": "/logo.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Eventos",
-      "short_name": "Eventos",
-      "description": "Ver calendário de eventos",
-      "url": "/events",
-      "icons": [{ "src": "/logo.png", "sizes": "96x96" }]
-    }
-  ],
-  "related_applications": [],
-  "prefer_related_applications": false
+  ]
 }

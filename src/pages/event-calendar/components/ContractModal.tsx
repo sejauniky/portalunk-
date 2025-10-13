@@ -132,7 +132,7 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(value) => (value ? undefined : onClose())}>
-      <DialogContent className="w-full max-w-5xl border border-border bg-background/95 p-0 text-foreground shadow-glass transition-all sm:rounded-2xl [&>button]:hidden">
+      <DialogContent className="w-full max-w-6xl border border-border bg-background/95 p-0 text-foreground shadow-glass transition-all sm:rounded-xl [&>button]:hidden">
         <div className="flex h-full max-h-[90vh] flex-col">
           <header className="flex items-start justify-between gap-4 border-b border-border bg-background/95 px-6 py-5">
             <div className="flex items-center gap-3">
@@ -191,7 +191,7 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
             </div>
           ) : (
             <ScrollArea className="flex-1">
-              <div className="space-y-6 px-6 py-6">
+              <div className="space-y-6 px-4 py-5">
                 <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                   <div className="rounded-xl border border-border bg-muted/10 p-4">
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -199,8 +199,7 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
                       Data do evento
                     </div>
                     <p className="mt-2 text-lg font-semibold">{formattedDate || "Data não informada"}</p>
-                    {formattedTime && <p className="text-sm text-muted-foreground">Às {formattedTime}</p>}
-                  </div>
+                                      </div>
 
                   <div className="rounded-xl border border-border bg-muted/10 p-4">
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -252,7 +251,7 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
                   </div>
 
                   <div className="mt-4">
-                    <Textarea value={contract.content} onChange={(e) => onChange({ content: e.target.value })} readOnly={!isEditing} />
+                    <Textarea className="min-h-[55vh]" value={contract.content} onChange={(e) => onChange({ content: e.target.value })} readOnly={!isEditing} />
                   </div>
                 </section>
               </div>

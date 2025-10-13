@@ -34,12 +34,11 @@ const ProducerCard = ({ producer, eventCount, onView, onEdit, onChangePassword, 
   const totalEventsSource = eventCount ?? producer?.total_events ?? producer?.events_count ?? producer?.event_count ?? (Array.isArray(producer?.events) ? producer?.events.length : null);
   const totalEventsNumber = typeof totalEventsSource === 'number' ? totalEventsSource : Number(totalEventsSource);
   const totalEvents = Number.isFinite(totalEventsNumber) ? Math.max(0, totalEventsNumber) : null;
-  const formattedLocation = producer?.address || [producer?.city, producer?.state].filter(Boolean).join(', ') || producer?.location || '';
+  const formattedLocation = '' /* endereço não exibido no card */;
   const contactName = producer?.contact_person || producer?.responsible || producer?.manager || '';
   const infoItems = [
     { icon: 'Mail', value: producer?.email },
     { icon: 'Phone', value: producer?.phone },
-    { icon: 'MapPin', value: formattedLocation },
     { icon: 'User', value: contactName },
   ].filter((item) => item.value);
 
@@ -660,14 +659,30 @@ const ProducerManagement = () => {
                 <h2 className="text-lg font-semibold text-foreground">Detalhes do Produtor</h2>
                 <Button variant="ghost" size="icon" onClick={() => setSelected(null)}><Icon name="X" size={18} /></Button>
               </div>
-              <div className="space-y-2">
-                <DetailRow label="Nome" value={selected?.name} />
-                <DetailRow label="Empresa" value={selected?.company_name} />
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-16 h-16 rounded-xl overflow-hidden border border-border bg-muted/20 flex items-center justify-center">
+                  {selected?.avatar_url || selected?.profile_image_url ? (
+                    <img src={selected?.avatar_url || selected?.profile_image_url} alt={selected?.name || selected?.company_name || 'Produtor'} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xl font-semibold text-muted-foreground">
+                      {(selected?.name || selected?.company_name || 'P').charAt(0)}
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xl font-semibold text-foreground truncate">{selected?.name || selected?.company_name || 'Produtor'}</div>
+                  {selected?.company_name && (selected?.company_name !== (selected?.name || '')) && (
+                    <div className="text-sm text-muted-foreground truncate">{selected?.company_name}</div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <DetailRow label="Email" value={selected?.email} />
                 <DetailRow label="Telefone" value={selected?.phone} />
                 <DetailRow label="CNPJ" value={selected?.cnpj} />
-                <DetailRow label="Endereço" value={selected?.address} />
                 <DetailRow label="Contato" value={selected?.contact_person} />
+                <DetailRow label="Endereço" value={selected?.address} />
               </div>
               <div className="mt-6 flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setSelected(null)}>Fechar</Button>

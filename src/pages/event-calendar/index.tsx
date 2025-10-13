@@ -31,6 +31,10 @@ type CompanySettingsRow = {
   contract_basic?: string | null;
   contract_intermediate?: string | null;
   contract_premium?: string | null;
+  bank_name?: string | null;
+  bank_agency?: string | null;
+  bank_account?: string | null;
+  pix_key?: string | null;
 };
 
 const CONTRACT_TEMPLATE_SOURCES: ReadonlyArray<{
@@ -116,6 +120,7 @@ const applyTemplatePlaceholders = (
   contract: EventContractFormState,
   dj: CalendarDJ | null,
   producer: CalendarProducer | null,
+  paymentDetails?: string,
 ): string => {
   if (!template) return "";
 
@@ -132,7 +137,7 @@ const applyTemplatePlaceholders = (
 
   const producerCnpj = String((producer as any)?.cnpj ?? '');
   const producerAddrParts = [
-    String((producer as any)?.business_address ?? (producer as any)?.address ?? ''),
+    String((producer as any)?.address ?? ''),
     String((producer as any)?.zip_code ?? ''),
   ]
     .map((s) => s.trim())
@@ -164,6 +169,17 @@ const applyTemplatePlaceholders = (
     '{STATUS}': String(event.status ?? ''),
     '{DATA DO PAGAMENTO}': eventDateLabel,
   };
+
+  if (paymentDetails) {
+    const pd = String(paymentDetails);
+    Object.assign(replacements, {
+      '{PAYMENT_DETAILS}': pd,
+      '{BANK_DETAILS}': pd,
+      '{DADOS_BANCARIOS}': pd,
+      '{CONTA_PAGAMENTO}': pd,
+      '{DADOS_PARA_PAGAMENTO}': pd,
+    });
+  }
 
   let out = template;
 
@@ -215,6 +231,23 @@ const applyTemplatePlaceholders = (
     });
     // Also replace bare [DATA DO PAGAMENTO] occurrences
     out = out.replace(/\[\s*DATA\s+DO\s+PAGAMENTO\s*\]/gi, eventDateLabel);
+  }
+
+  // Fill bank/payment details if label present or append if missing
+  if (paymentDetails) {
+    const pd = String(paymentDetails);
+    const fillIfEmpty = (regex: RegExp) => {
+      out = out.replace(regex, (m, p1, p2) => {
+        const hasText = p2 && p2.trim().length > 0 && !/\[.*?\]/.test(p2);
+        return hasText ? m : `${p1}${pd}`;
+      });
+    };
+    fillIfEmpty(/(DADOS\s+(PARA\s+)?PAGAMENTO\s*:\s*)([^\n]*)/gi);
+    fillIfEmpty(/(CONTA\s+(PARA\s+)?PAGAMENTO\s*:\s*)([^\n]*)/gi);
+
+    if (!new RegExp(pd.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(out)) {
+      out = `${out}\n\nDados para pagamento: ${pd}`;
+    }
   }
 
   return out;
@@ -391,7 +424,6 @@ const EventCalendar = () => {
           // extra fields used by contract placeholders
           cnpj: (producer as any)?.cnpj ?? null,
           address: (producer as any)?.address ?? null,
-          business_address: (producer as any)?.business_address ?? null,
           zip_code: (producer as any)?.zip_code ?? null,
         } as any;
       })
@@ -429,12 +461,12 @@ const EventCalendar = () => {
     async (producerId: string): Promise<CalendarProducer | null> => {
       if (!producerId) return null;
       const local: any = calendarProducers.find((item) => item.id === producerId);
-      const hasFullData = local && (local.cnpj || local.address || local.business_address || local.zip_code);
+      const hasFullData = local && (local.cnpj || local.address || local.zip_code);
       if (hasFullData) return local as CalendarProducer;
 
       const { data, error } = await supabase
         .from("producers")
-        .select("id, name, company_name, email, cnpj, address, business_address, zip_code")
+        .select("id, name, company_name, email, cnpj, address, zip_code")
         .eq("id", producerId)
         .maybeSingle();
 
@@ -449,7 +481,6 @@ const EventCalendar = () => {
         company_name: data.company_name ?? local?.company_name ?? null,
         cnpj: (data as any)?.cnpj ?? local?.cnpj ?? null,
         address: (data as any)?.address ?? local?.address ?? null,
-        business_address: (data as any)?.business_address ?? local?.business_address ?? null,
         zip_code: (data as any)?.zip_code ?? local?.zip_code ?? null,
       };
       return enriched as CalendarProducer;
@@ -477,7 +508,7 @@ const EventCalendar = () => {
         const [{ data: settingsData, error: settingsError }, { data: eventData, error: eventError }] = await Promise.all([
           supabase
             .from("company_settings")
-            .select("contract_basic, contract_intermediate, contract_premium")
+            .select("contract_basic, contract_intermediate, contract_premium, bank_name, bank_agency, bank_account, pix_key")
             .maybeSingle<CompanySettingsRow>(),
           supabase
             .from("events")
@@ -650,7 +681,7 @@ const EventCalendar = () => {
         try {
           const { data: settingsData } = await supabase
             .from("company_settings")
-            .select("contract_basic, contract_intermediate, contract_premium")
+            .select("contract_basic, contract_intermediate, contract_premium, bank_name, bank_agency, bank_account, pix_key")
             .maybeSingle();
 
           if (settingsData) {
@@ -697,12 +728,20 @@ const EventCalendar = () => {
                 value: payload.cache_value,
               };
 
+              const paymentDetails = [
+                settingsData?.bank_name ? `Banco: ${settingsData.bank_name}` : null,
+                settingsData?.bank_agency ? `Agência: ${settingsData.bank_agency}` : null,
+                settingsData?.bank_account ? `Conta: ${settingsData.bank_account}` : null,
+                settingsData?.pix_key ? `PIX: ${settingsData.pix_key}` : null,
+              ].filter(Boolean).join(' | ');
+
               const processedContent = applyTemplatePlaceholders(
                 selectedTemplate.content,
                 tempEvent,
                 tempContract,
                 firstDj,
-                producerData
+                producerData,
+                paymentDetails
               );
 
               await supabase
@@ -867,12 +906,25 @@ const EventCalendar = () => {
 
     try {
       const template = contractTemplates.find((item) => item.id === contractState.templateId);
+
+      const { data: settings } = await supabase
+        .from("company_settings")
+        .select("bank_name, bank_agency, bank_account, pix_key")
+        .maybeSingle<CompanySettingsRow>();
+      const paymentDetails = [
+        settings?.bank_name ? `Banco: ${settings.bank_name}` : null,
+        settings?.bank_agency ? `Agência: ${settings.bank_agency}` : null,
+        settings?.bank_account ? `Conta: ${settings.bank_account}` : null,
+        settings?.pix_key ? `PIX: ${settings.pix_key}` : null,
+      ].filter(Boolean).join(' | ');
+
       const processedContent = applyTemplatePlaceholders(
         contractState.content || template?.content || "",
         contractEvent,
         contractState,
         contractDj,
         contractProducer,
+        paymentDetails
       );
 
       const { error } = await supabase

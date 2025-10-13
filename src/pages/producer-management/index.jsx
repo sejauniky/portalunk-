@@ -38,7 +38,7 @@ const ProducerCard = ({ producer, eventCount, onView, onEdit, onChangePassword, 
   const contactName = producer?.contact_person || producer?.responsible || producer?.manager || '';
   const infoItems = [
     { icon: 'Mail', value: producer?.email },
-    { icon: 'Phone', value: producer?.phone },
+    { icon: 'Phone', value: producer?.contact_phone },
     { icon: 'User', value: contactName },
   ].filter((item) => item.value);
 
@@ -145,9 +145,9 @@ const ProducerCard = ({ producer, eventCount, onView, onEdit, onChangePassword, 
 };
 
 const DetailRow = ({ label, value }) => (
-  <div className="flex justify-between py-2 border-b border-border/60">
-    <span className="text-sm text-muted-foreground pl-2 sm:pl-0">{label}</span>
-    <span className="text-sm text-foreground max-w-[60%] text-right truncate pr-4 sm:pr-0 ml-0.5">{value || '-'}</span>
+  <div className="flex justify-between py-2 border-b border-border/60 gap-3">
+    <span className="text-sm text-muted-foreground pl-2 sm:pl-0 whitespace-nowrap">{label}</span>
+    <span className="text-sm text-foreground ml-0.5 pr-4 sm:pr-0 break-words whitespace-normal flex-1 text-left">{value || '-'}</span>
   </div>
 );
 
@@ -177,10 +177,11 @@ const ProducerManagement = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
+    contact_phone: '',
     company_name: '',
     cnpj: '',
     address: '',
+    zip_code: '',
     contact_person: '',
     is_active: true,
     avatar_url: ''
@@ -192,15 +193,22 @@ const ProducerManagement = () => {
   const [selectedAvatarPreview, setSelectedAvatarPreview] = useState('');
   const fileInputRef = useRef(null);
 
+  const formatCep = (value) => {
+    const digits = String(value || '').replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 5) return digits;
+    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  };
+
   useEffect(() => {
     if (editData) {
       setFormData({
         name: editData?.name || '',
         email: editData?.email || '',
-        phone: editData?.phone || '',
+        contact_phone: editData?.contact_phone || '',
         company_name: editData?.company_name || '',
         cnpj: editData?.cnpj || '',
         address: editData?.address || '',
+        zip_code: editData?.zip_code || '',
         contact_person: editData?.contact_person || '',
         is_active: editData?.is_active ?? true,
         avatar_url: editData?.avatar_url || editData?.profile_image_url || ''
@@ -350,6 +358,11 @@ const ProducerManagement = () => {
       return;
     }
 
+    if (formData?.zip_code && !/^\d{5}-\d{3}$/.test(formatCep(formData.zip_code))) {
+      alert('CEP inválido. Use o formato 00000-000');
+      return;
+    }
+
     try {
       // Upload avatar if selected
       if (selectedAvatar) {
@@ -375,7 +388,7 @@ const ProducerManagement = () => {
       const profileUpdates = {
         full_name: updates.name,
         email: updates.email,
-        phone: updates.phone,
+        phone: updates.contact_phone,
         avatar_url: updates.avatar_url,
       };
       const { error: profileErr } = await supabase
@@ -391,11 +404,11 @@ const ProducerManagement = () => {
       const producerUpdates = {
         name: updates.name,
         email: updates.email,
-        phone: updates.phone,
+        contact_phone: updates.contact_phone,
         company_name: updates.company_name,
         cnpj: updates.cnpj,
         address: updates.address,
-        business_address: updates.address,
+        zip_code: updates.zip_code,
         contact_person: updates.contact_person,
         is_active: updates.is_active,
         avatar_url: updates.avatar_url,
@@ -636,7 +649,7 @@ const ProducerManagement = () => {
         {/* Details Modal */}
         {selected && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[9999] p-4">
-            <div className="bg-[#151516]/80 border border-[rgba(130,90,195,1)] rounded-xl w-full max-w-lg p-6 shadow-[1px_1px_23px_0_rgba(17,21,119,1)]">
+            <div className="bg-[#151516]/80 border border-[rgba(130,90,195,1)] rounded-xl w-full max-w-2xl p-6 shadow-[1px_1px_23px_0_rgba(17,21,119,1)]">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-foreground">Detalhes do Produtor</h2>
                 <Button variant="ghost" size="icon" onClick={() => setSelected(null)}><Icon name="X" size={18} /></Button>
@@ -661,10 +674,11 @@ const ProducerManagement = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <DetailRow label="Email" value={selected?.email} />
-                <DetailRow label="Telefone" value={selected?.phone} />
+                <DetailRow label="Telefone" value={selected?.contact_phone} />
                 <DetailRow label="CNPJ" value={selected?.cnpj} />
                 <DetailRow label="Contato" value={selected?.contact_person} />
                 <DetailRow label="Endereço" value={selected?.address} />
+                <DetailRow label="CEP" value={selected?.zip_code} />
               </div>
               <div className="mt-6 flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setSelected(null)}>Fechar</Button>
@@ -720,14 +734,15 @@ const ProducerManagement = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input value={formData?.name} onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))} placeholder="Nome *" />
                 <Input value={formData?.email} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} placeholder="Email *" type="email" />
-                <Input value={formData?.phone} onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))} placeholder="Telefone" />
+                <Input value={formData?.contact_phone} onChange={(e) => setFormData(prev => ({ ...prev, contact_phone: e.target.value }))} placeholder="Telefone" />
                 <Input value={formData?.company_name} onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))} placeholder="Nome da Empresa" />
                 <Input value={formData?.cnpj} onChange={(e) => setFormData(prev => ({ ...prev, cnpj: e.target.value }))} placeholder="CNPJ" />
                 <Input value={formData?.contact_person} onChange={(e) => setFormData(prev => ({ ...prev, contact_person: e.target.value }))} placeholder="Pessoa de Contato" />
               </div>
 
-              <div className="mt-4">
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input value={formData?.address} onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))} placeholder="Endereço" />
+                <Input value={formData?.zip_code} onChange={(e) => setFormData(prev => ({ ...prev, zip_code: formatCep(e.target.value) }))} placeholder="00000-000" />
               </div>
 
               <div className="flex items-center space-x-2 mt-4">

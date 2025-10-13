@@ -15,10 +15,11 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
   const [formData, setFormData] = useState({
     contact_person: '',
     email_prefix: '',
-    phone: '',
+    contact_phone: '',
     company_name: '',
     cnpj: '',
     address: '',
+    zip_code: '',
     password: '',
     confirmPassword: '',
   });
@@ -26,6 +27,12 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
   const [avatarPreview, setAvatarPreview] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const formatCep = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 5) return digits;
+    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  };
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -92,6 +99,12 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
     const loginAlias = `${sanitizedPrefix}@unk`;
     const supabaseEmail = `${loginAlias}.com`;
 
+    // Validate CEP if provided
+    if (formData.zip_code && !/^\d{5}-\d{3}$/.test(formatCep(formData.zip_code))) {
+      toast.error('CEP inválido. Use o formato 00000-000');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -145,7 +158,7 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
           id: userId,
           full_name: formData.contact_person,
           email: supabaseEmail,
-          phone: formData.phone || null,
+          phone: formData.contact_phone || null,
           avatar_url: avatarUrl,
           role: 'producer'
         });
@@ -167,10 +180,11 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
         .insert({
           id: userId,
           contact_person: formData.contact_person,
-          contact_phone: formData.phone || null,
+          contact_phone: formData.contact_phone || null,
           company_name: formData.company_name || null,
           cnpj: formData.cnpj || null,
           address: formData.address || null,
+          zip_code: formData.zip_code || null,
           avatar_url: avatarUrl,
           is_active: true
         });
@@ -190,10 +204,11 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
       setFormData({
         contact_person: '',
         email_prefix: '',
-        phone: '',
+        contact_phone: '',
         company_name: '',
         cnpj: '',
         address: '',
+        zip_code: '',
         password: '',
         confirmPassword: '',
       });
@@ -302,8 +317,8 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
 
             <Input
               label="Telefone"
-              value={formData.phone}
-              onChange={(e) => handleChange('phone', e.target.value)}
+              value={formData.contact_phone}
+              onChange={(e) => handleChange('contact_phone', e.target.value)}
               placeholder="(11) 99999-9999"
               wrapperClassName="w-full"
             />
@@ -330,6 +345,14 @@ export const ProducerCreateModal = ({ isOpen, onClose, onSuccess }: ProducerCrea
               onChange={(e) => handleChange('address', e.target.value)}
               placeholder="Rua, Número, Cidade - Estado"
               wrapperClassName="md:col-span-2"
+            />
+
+            <Input
+              label="CEP"
+              value={formData.zip_code}
+              onChange={(e) => handleChange('zip_code', formatCep(e.target.value))}
+              placeholder="00000-000"
+              wrapperClassName="w-full"
             />
           </div>
 

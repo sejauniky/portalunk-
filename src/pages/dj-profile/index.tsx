@@ -867,7 +867,7 @@ const DJsProfile = () => {
 
             <div className="flex-1 space-y-5">
               <div>
-                <h1 className="text-4xl font-bold tracking-tight text-[rgba(197,156,255,1)] drop-shadow-[0_12px_40px_rgba(127,92,247,0.55)]">
+                <h1 className="text-4xl font-bold tracking-tight text-[rgba(200,237,248,1)] drop-shadow-[0_12px_40px_rgba(127,92,247,0.55)]">
                   {dj.artist_name ?? "DJ"}
                 </h1>
                 <p className="text-lg text-white/80">{dj.real_name ?? "-"}</p>

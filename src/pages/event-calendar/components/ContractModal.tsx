@@ -132,7 +132,7 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(value) => (value ? undefined : onClose())}>
-      <DialogContent className="w-[95vw] sm:w-full sm:max-w-6xl border border-border bg-background/95 p-0 text-foreground shadow-glass transition-all sm:rounded-xl [&>button]:hidden max-h-[90vh]">
+      <DialogContent className="w-[90vw] sm:w-full sm:max-w-4xl border border-border bg-background/95 p-0 text-foreground shadow-glass transition-all sm:rounded-xl [&>button]:hidden max-h-[85vh]">
         <div className="flex h-full flex-col">
           <header className="flex items-start justify-between gap-3 border-b border-border bg-background/95 px-4 py-3 sm:px-6 sm:py-4">
             <div className="flex items-center gap-3">
@@ -251,7 +251,7 @@ export const EventContractModal: React.FC<EventContractModalProps> = ({
                   </div>
 
                   <div className="mt-4">
-                    <Textarea className="min-h-[40vh] sm:min-h-[55vh]" value={contract.content} onChange={(e) => onChange({ content: e.target.value })} readOnly={!isEditing} />
+                    <Textarea className="min-h-[35vh] sm:min-h-[50vh]" value={contract.content} onChange={(e) => onChange({ content: e.target.value })} readOnly={!isEditing} />
                   </div>
                 </section>
               </div>

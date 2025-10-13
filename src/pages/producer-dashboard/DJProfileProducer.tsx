@@ -25,6 +25,7 @@ import {
   Headphones,
   FileText,
   X,
+  ExternalLink,
 } from "lucide-react";
 import { normalizeSocialUrl } from "@/utils/social";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -251,9 +252,14 @@ const DJProfileProducer = () => {
       }
     >
       {items.map((file) => {
-        const isImage = file.file_type?.startsWith?.("image");
-        const isAudio = file.file_type?.startsWith?.("audio");
-        const isVideo = file.file_type?.startsWith?.("video") || /\.(mp4|webm|ogg|mov|m4v)$/i.test(String(file.file_url || ""));
+        const urlStr = String(file.file_url || "");
+        const driveUrl = (file.metadata && (file.metadata as any).drive_link) ? String((file.metadata as any).drive_link) : undefined;
+        const isDrive = /drive\.google\.com/.test(urlStr) || /drive\.google\.com/.test(String(driveUrl || ""));
+        const byExtImage = /\.(png|jpe?g|gif|webp|avif|svg)$/i.test(urlStr);
+        const byExtVideo = /\.(mp4|webm|ogg|mov|m4v)$/i.test(urlStr);
+        const isVideo = (file.file_type?.startsWith?.("video") ?? false) || (byExtVideo && !isDrive);
+        const isImage = (file.file_type?.startsWith?.("image") ?? false) || (byExtImage && !isDrive);
+        const isAudio = file.file_type?.startsWith?.("audio") ?? false;
         const containerClasses =
           variant === "thumbnail"
             ? "group relative h-20 sm:h-24 lg:h-28 rounded-lg overflow-hidden border border-border"
@@ -261,11 +267,17 @@ const DJProfileProducer = () => {
 
         return (
           <div key={file.id} className={containerClasses}>
-            {isImage ? (
+            {isDrive ? (
+              <div className="w-full h-full bg-muted/30 flex flex-col items-center justify-center p-3 text-center">
+                <ExternalLink className="h-8 w-8 text-muted-foreground" />
+                <p className="mt-2 text-xs text-muted-foreground">Abrir no Google Drive</p>
+              </div>
+            ) : isImage ? (
               <img
                 src={file.file_url}
                 alt={file.file_name}
                 className={variant === "thumbnail" ? "h-full w-full object-cover" : "w-full h-full object-cover"}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
               />
             ) : isVideo ? (
               <video
@@ -286,12 +298,12 @@ const DJProfileProducer = () => {
             )}
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
               <Button size="icon" variant="secondary" asChild>
-                <a href={file.file_url} target="_blank" rel="noopener noreferrer">
+                <a href={isDrive ? (driveUrl || urlStr) : urlStr} target="_blank" rel="noopener noreferrer">
                   <Eye className="h-4 w-4" />
                 </a>
               </Button>
               <Button size="icon" variant="secondary" asChild>
-                <a href={file.file_url} download>
+                <a href={isDrive ? (driveUrl || urlStr) : urlStr} download={!isDrive}>
                   <Download className="h-4 w-4" />
                 </a>
               </Button>

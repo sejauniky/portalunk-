@@ -106,7 +106,7 @@ export const ContractViewModal = ({
                   Li e concordo com os termos do contrato
                 </label>
               </div>
-              <Button onClick={handleSign} disabled={isSigning || !agree} className="gap-2">
+              <Button onClick={handleSign} disabled={isSigning || !agree || !contractId} className="gap-2">
                 <Check className="h-4 w-4" />
                 {isSigning ? "Assinando..." : "Li e concordo"}
               </Button>

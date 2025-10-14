@@ -263,8 +263,8 @@ const ProducerDashboard: FC = () => {
   return (
     <div className="min-h-screen bg-background" style={{ backgroundColor: "rgb(19, 20, 22)", fontWeight: 400, minHeight: "642px" }}>
       <header className="border-b border-border sticky top-0 bg-background/80 backdrop-blur-lg z-10" style={{ backdropFilter: "blur(16px)", backgroundColor: "rgba(19, 20, 22, 0.8)", borderBottomWidth: "1px", borderColor: "rgb(47, 50, 55)", fontWeight: 400, position: "sticky", top: "0px", zIndex: "10" }}>
-        <div className="container mx-auto px-6 py-4" style={{ width: "100%", backgroundColor: "rgba(4, 1, 56, 0.17)", margin: "0 auto", padding: "16px 24px" }}>
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-4 sm:px-6 py-4" style={{ width: "100%", backgroundColor: "rgba(4, 1, 56, 0.17)", margin: "0 auto" }}>
+          <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-16 h-16 flex items-center justify-center">
                 {/* Use vinyl SVG from public and rotate slowly - larger and no bg */}
@@ -295,7 +295,7 @@ const ProducerDashboard: FC = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-12" style={{ width: "100%", backgroundColor: "rgba(3, 20, 36, 0.23)", margin: "0 auto", padding: "48px 24px" }}>
+      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-12" style={{ width: "100%", backgroundColor: "rgba(3, 20, 36, 0.23)", margin: "0 auto" }}>
         {contractedDJs.length === 0 ? (
           <div className="text-center py-20">
             <img src="/vinil.svg" alt="vinil" className="h-16 w-16 mx-auto mb-4 slow-spin" />

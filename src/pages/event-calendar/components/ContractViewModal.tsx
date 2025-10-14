@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
 import { FileText, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -31,7 +30,6 @@ export const ContractViewModal = ({
   djId,
 }: ContractViewModalProps) => {
   const [isSigning, setIsSigning] = useState(false);
-  const [agree, setAgree] = useState(false);
   const [resolvedId, setResolvedId] = useState<string>(contractId || "");
   const [resolving, setResolving] = useState(false);
 
@@ -151,7 +149,7 @@ export const ContractViewModal = ({
   };
 
   const isSigned = signatureStatus === "signed";
-  const disablePrimary = isSigning || resolving || !agree || (!resolvedId && !!eventId && !!djId);
+  const disablePrimary = isSigning || resolving;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -176,18 +174,10 @@ export const ContractViewModal = ({
               <span className="font-medium">Contrato Assinado</span>
             </div>
           ) : (
-            <>
-              <div className="flex items-center gap-2 mr-auto">
-                <Checkbox id="agree" checked={agree} onCheckedChange={(v) => setAgree(Boolean(v))} />
-                <label htmlFor="agree" className="text-sm select-none">
-                  Li e concordo com os termos do contrato
-                </label>
-              </div>
-              <Button onClick={handleSign} disabled={disablePrimary} className="gap-2">
-                <Check className="h-4 w-4" />
-                {isSigning || resolving ? "Preparando..." : "Salvar"}
-              </Button>
-            </>
+            <Button onClick={handleSign} disabled={disablePrimary} className="gap-2 mr-auto">
+              <Check className="h-4 w-4" />
+              {isSigning || resolving ? "Preparando..." : "✓ Li e Concordo"}
+            </Button>
           )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Fechar

@@ -58,7 +58,7 @@ export const ContractViewModal = ({
           .eq("id", eventId)
           .maybeSingle();
         const contractType = (evInfo as any)?.contract_type || "basic";
-        const ownerProducerId = (evInfo as any)?.producer_id || null;
+        const ownerProducerId = (evInfo as any)?.producer_id || (await supabase.auth.getUser()).data.user?.id || null;
         if (ownerProducerId) {
           try {
             await supabase.functions.invoke('create-event-contracts', {

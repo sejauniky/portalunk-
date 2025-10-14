@@ -977,21 +977,64 @@ const EventCalendar = () => {
           .eq('event_id', contractEvent.id)
           .limit(1);
 
-        if (!existing || existing.length === 0) {
-          const djIds = (contractEvent as any)?.dj_ids && Array.isArray((contractEvent as any).dj_ids) && (contractEvent as any).dj_ids.length
-            ? (contractEvent as any).dj_ids
-            : ((contractEvent as any)?.dj_id ? [(contractEvent as any).dj_id] : []);
-          const producerId = (contractEvent as any)?.producer_id || '';
+        // Fetch event info and DJ list
+        const [{ data: evInfo }, { data: rels }] = await Promise.all([
+          supabase
+            .from('events')
+            .select('producer_id, contract_type, contract_content, cache_value, dj_id')
+            .eq('id', contractEvent.id)
+            .maybeSingle(),
+          supabase
+            .from('event_djs')
+            .select('dj_id')
+            .eq('event_id', contractEvent.id),
+        ]);
+        const producerId = (evInfo as any)?.producer_id || '';
+        const templateId = (contractState?.templateId || (evInfo as any)?.contract_type || 'basic') as string;
+        const directContent = (evInfo as any)?.contract_content || contractState?.content || '';
+        const value = Number((evInfo as any)?.cache_value || contractState?.value || 0) || 0;
+        const djIdsBase = Array.isArray(rels) ? rels.map((r: any) => r.dj_id).filter(Boolean) : [];
+        const primary = (evInfo as any)?.dj_id ? [(evInfo as any).dj_id] : [];
+        const djIds = Array.from(new Set([...(djIdsBase || []), ...primary]));
 
-          if (djIds.length > 0 && producerId) {
+        if ((!existing || existing.length === 0) && djIds.length > 0 && producerId) {
+          // Try edge function first
+          let invoked = false;
+          try {
             await supabase.functions.invoke('create-event-contracts', {
-              body: {
-                eventId: contractEvent.id,
-                djIds,
-                contractType: contractState.templateId,
-                producerId,
-              },
+              body: { eventId: contractEvent.id, djIds, contractType: templateId, producerId },
             });
+            invoked = true;
+          } catch (_) {}
+
+          // If still no instances, create directly per DJ
+          const check = await supabase
+            .from('contract_instances')
+            .select('id')
+            .eq('event_id', contractEvent.id)
+            .limit(1);
+          const hasAny = Array.isArray(check.data) && check.data.length > 0;
+          if (!hasAny) {
+            for (const djId of djIds) {
+              try {
+                const existsOne = await supabase
+                  .from('contract_instances')
+                  .select('id')
+                  .eq('event_id', contractEvent.id)
+                  .eq('dj_id', djId)
+                  .maybeSingle();
+                if (existsOne?.data?.id) continue;
+                await supabase.from('contract_instances').insert({
+                  event_id: contractEvent.id,
+                  dj_id,
+                  producer_id: producerId,
+                  template_id: templateId,
+                  contract_content: directContent,
+                  contract_value: value,
+                  signature_status: 'pending',
+                } as any);
+              } catch (_) {}
+            }
           }
         }
       } catch (fnErr) {

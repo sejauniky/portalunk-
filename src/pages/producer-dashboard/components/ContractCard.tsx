@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { FileText, Check, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { validateContractForSignature } from '@/lib/contractValidation';
 
 type ContractInstance = {
   id: string;
@@ -36,6 +37,12 @@ export const ContractCard = ({ contract, onContractSigned }: ContractCardProps) 
   const handleSign = async () => {
     setSigning(true);
     try {
+      // Validar se o contrato pode ser assinado
+      const validation = await validateContractForSignature(contract.id);
+      if (!validation.canSign) {
+        throw new Error(validation.error || 'Contrato não disponível para assinatura.');
+      }
+
       const { error } = await supabase
         .from('contract_instances')
         .update({
@@ -61,7 +68,7 @@ export const ContractCard = ({ contract, onContractSigned }: ContractCardProps) 
       onContractSigned?.();
     } catch (error) {
       console.error('Erro ao assinar contrato:', error);
-      toast.error('Erro ao assinar contrato');
+      toast.error(error instanceof Error ? error.message : 'Erro ao assinar contrato');
     } finally {
       setSigning(false);
     }

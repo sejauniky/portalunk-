@@ -331,17 +331,13 @@ const ProducerDashboard: FC = () => {
                   <div className="flex items-center justify-between w-full mb-2">
                     <h3 className="text-2xl font-bold truncate" style={{ color: "rgb(123, 135, 153)", fontSize: "24px", fontWeight: "700", lineHeight: "32px", overflowX: "hidden", overflowY: "hidden", textOverflow: "ellipsis", textShadow: "rgb(3, 20, 46) 1px 1px 3px", textWrap: "nowrap", whiteSpace: "nowrap" }}>{dj.artist_name}</h3>
 
-                    <div className="relative ml-4 flex-shrink-0">
-                      {/* colored blurred background behind the small button */}
-                      <div className="absolute inset-0 -translate-x-1 translate-y-1 rounded-full blur-xl opacity-60" style={{ background: 'linear-gradient(90deg, rgba(96,165,250,0.18), rgba(139,92,246,0.16))' }} />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="relative z-10 inline-flex items-center gap-2 rounded-full text-sm"
-                        style={{ backgroundColor: "rgba(1, 8, 43, 0.39)", borderColor: "rgba(255, 255, 255, 0.2)", borderWidth: "1px", color: "rgba(163, 184, 199, 1)", fontSize: "14px", fontWeight: 500, gap: "8px", height: "36px", justifyContent: "center", lineHeight: "20px", position: "relative", whiteSpace: "nowrap", zIndex: 10, marginBottom: "-90px", boxShadow: "1px 1px 19px 0 rgba(6, 22, 59, 1)", padding: "6px 12px 9px" }}
+                    <div className="relative ml-2 sm:ml-4 flex-shrink-0">
+                      <div className="absolute inset-0 -translate-x-1 translate-y-1 rounded-full blur-xl opacity-60 hidden sm:block" style={{ background: 'linear-gradient(90deg, rgba(96,165,250,0.18), rgba(139,92,246,0.16))' }} />
+                      <span
+                        className="relative z-10 inline-flex items-center gap-2 rounded-full text-xs sm:text-sm px-3 py-1.5 sm:px-3.5 sm:py-2 border border-white/20 text-[rgba(163,184,199,1)] bg-[rgba(1,8,43,0.39)] shadow-[1px_1px_19px_0_rgba(6,22,59,1)] sm:absolute sm:right-0 sm:-top-1 whitespace-nowrap"
                       >
                         Ver detalhes
-                      </Button>
+                      </span>
                     </div>
                   </div>
 

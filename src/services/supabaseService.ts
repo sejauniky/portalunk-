@@ -392,7 +392,7 @@ const syncDjProducerRelationStats = async (
       if (updateError) {
         const msg = formatError(updateError);
         if (isNetworkError(msg)) throw new AppError('Erro de rede ao atualizar relação DJ-produtor', ErrorKind.Network, updateError);
-        throw new AppError('Erro ao atualizar relação DJ-produtor', ErrorKind.Database, updateError);
+        throw new AppError('Erro ao atualizar rela��ão DJ-produtor', ErrorKind.Database, updateError);
       }
     } else {
       const insertPayload = {
@@ -526,93 +526,57 @@ export const eventService = {
         return { data: [], error: 'supabase_not_configured' };
       }
 
-      // Usando query simplificada do arquivo queries.ts
-      const { data: events, error } = await supabase
+      // Query simples para evitar 400 por metadados de relacionamentos ausentes
+      const { data: fallbackEvents, error: e2 } = await supabase
         .from('events')
-        .select(`
-          *,
-          dj:djs!events_dj_id_fkey (
-            id,
-            artist_name,
-            name,
-            stage_name,
-            email
-          ),
-          producer:producers!events_producer_id_fkey (
-            id,
-            name,
-            company_name,
-            email,
-            profile_id
-          ),
-          event_djs:event_djs (
-            id,
-            dj_id,
-            fee,
-            dj:djs!event_djs_dj_id_fkey (
-              id,
-              artist_name,
-              name,
-              stage_name,
-              email,
-              genre
-            )
-          )
-        `)
+        .select('*')
         .order('event_date', { ascending: false });
-      if (error) {
-        // Fallback when DB relationship metadata is missing: fetch base records and assemble relations manually
-        const { data: fallbackEvents, error: e2 } = await supabase
-          .from('events')
-          .select('*')
-          .order('event_date', { ascending: false });
-        if (e2) throw e2;
-        if (!fallbackEvents) return { data: [], error: formatError(error) };
-
-        const eventIds = fallbackEvents.map((ev: any) => ev.id).filter(Boolean);
-        const djIds = Array.from(new Set(fallbackEvents.map((ev: any) => ev.dj_id).filter(Boolean)));
-        const producerIds = Array.from(new Set(fallbackEvents.map((ev: any) => ev.producer_id).filter(Boolean)));
-
-        const { data: djs } = djIds.length
-          ? await supabase.from('djs').select('*').in('id', djIds.map(String) as string[])
-          : ({ data: [] } as any);
-        const { data: producers } = producerIds.length
-          ? await supabase.from('producers').select('*').in('id', producerIds.map(String) as string[])
-          : ({ data: [] } as any);
-
-        const producerProfileIds = (producers || []).map((p: any) => p.profile_id).filter(Boolean);
-        const { data: profiles } = producerProfileIds.length
-          ? await supabase.from('profiles').select('*').in('id', producerProfileIds)
-          : ({ data: [] } as any);
-
-        const { data: eventDjs } = eventIds.length
-          ? await supabase.from('event_djs').select('*').in('event_id', eventIds.map(String) as string[])
-          : ({ data: [] } as any);
-        const extraDjIds = Array.from(new Set((eventDjs || []).map((ed: any) => ed.dj_id).filter(Boolean)));
-        const { data: extraDjs } = extraDjIds.length
-          ? await supabase.from('djs').select('*').in('id', extraDjIds.map(String) as string[])
-          : ({ data: [] } as any);
-
-        const enriched = (fallbackEvents || []).map((ev: any) => {
-          const dj = (djs || []).find((d: any) => d.id === ev.dj_id) || null;
-          const producerRaw = (producers || []).find((p: any) => p.id === ev.producer_id) || null;
-          let producer = producerRaw;
-          if (producerRaw && 'profile_id' in producerRaw && producerRaw.profile_id) {
-            producer = { ...producerRaw, profile: (profiles || []).find((pr: any) => pr.id === producerRaw.profile_id) || null };
-          }
-          if (producerRaw && (!('profile_id' in producerRaw) || !producerRaw.profile_id)) {
-            producer = { ...producerRaw, profile: null };
-          }
-          const eds = (eventDjs || [])
-            .filter((ed: any) => ed.event_id === ev.id)
-            .map((ed: any) => ({ ...ed, dj: (extraDjs || []).find((d: any) => d.id === ed.dj_id) || null }));
-          return { ...ev, dj, producer, event_djs: eds } as unknown as EnrichedEvent;
-        });
-
-        return { data: enriched, error: null };
+      if (e2) {
+        return { data: [], error: formatError(e2) };
       }
+      const eventsBase = fallbackEvents || [];
 
-  return { data: (events || []) as unknown as EnrichedEvent[], error: null };
+      const eventIds = eventsBase.map((ev: any) => ev.id).filter(Boolean);
+      const djIds = Array.from(new Set(eventsBase.map((ev: any) => ev.dj_id).filter(Boolean)));
+      const producerIds = Array.from(new Set(eventsBase.map((ev: any) => ev.producer_id).filter(Boolean)));
+
+      const { data: djs } = djIds.length
+        ? await supabase.from('djs').select('*').in('id', djIds.map(String) as string[])
+        : ({ data: [] } as any);
+      const { data: producers } = producerIds.length
+        ? await supabase.from('producers').select('*').in('id', producerIds.map(String) as string[])
+        : ({ data: [] } as any);
+
+      const producerProfileIds = (producers || []).map((p: any) => p.profile_id).filter(Boolean);
+      const { data: profiles } = producerProfileIds.length
+        ? await supabase.from('profiles').select('*').in('id', producerProfileIds)
+        : ({ data: [] } as any);
+
+      const { data: eventDjs } = eventIds.length
+        ? await supabase.from('event_djs').select('*').in('event_id', eventIds.map(String) as string[])
+        : ({ data: [] } as any);
+      const extraDjIds = Array.from(new Set((eventDjs || []).map((ed: any) => ed.dj_id).filter(Boolean)));
+      const { data: extraDjs } = extraDjIds.length
+        ? await supabase.from('djs').select('*').in('id', extraDjIds.map(String) as string[])
+        : ({ data: [] } as any);
+
+      const enriched = (eventsBase || []).map((ev: any) => {
+        const dj = (djs || []).find((d: any) => d.id === ev.dj_id) || null;
+        const producerRaw = (producers || []).find((p: any) => p.id === ev.producer_id) || null;
+        let producer = producerRaw;
+        if (producerRaw && 'profile_id' in producerRaw && producerRaw.profile_id) {
+          producer = { ...producerRaw, profile: (profiles || []).find((pr: any) => pr.id === producerRaw.profile_id) || null };
+        }
+        if (producerRaw && (!('profile_id' in producerRaw) || !producerRaw.profile_id)) {
+          producer = { ...producerRaw, profile: null };
+        }
+        const eds = (eventDjs || [])
+          .filter((ed: any) => ed.event_id === ev.id)
+          .map((ed: any) => ({ ...ed, dj: (extraDjs || []).find((d: any) => d.id === ed.dj_id) || null }));
+        return { ...ev, dj, producer, event_djs: eds } as unknown as EnrichedEvent;
+      });
+
+      return { data: enriched, error: null };
     } catch (error) {
       console.error('Error fetching events:', formatError(error));
       const msg = formatError(error);

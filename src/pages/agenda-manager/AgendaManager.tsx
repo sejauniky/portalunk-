@@ -45,7 +45,7 @@ const AgendaManager = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <h1 className="text-3xl font-bold mb-6 text-foreground">Agenda Pessoal</h1>
 
       <div className="flex space-x-2 mb-6 overflow-x-auto pb-2">
@@ -234,9 +234,9 @@ function DjAgenda({ dj }) {
       )}
 
       {!loading && !error && viewMode === 'calendar' && (
-        <div className="bg-background rounded-lg overflow-hidden border border-border">
+        <div className="bg-background rounded-lg border border-border overflow-x-auto">
           {/* Dias da semana */}
-          <div className="grid grid-cols-7 bg-primary/10">
+          <div className="grid grid-cols-7 min-w-[700px] bg-primary/10">
             {weekDays.map((day) => (
               <div
                 key={day}
@@ -248,7 +248,7 @@ function DjAgenda({ dj }) {
           </div>
 
           {/* Grid de dias */}
-          <div className="grid grid-cols-7">
+          <div className="grid grid-cols-7 min-w-[700px]">
             {/* Dias vazios no início */}
             {emptyDays.map((_, index) => (
               <div

@@ -18,7 +18,7 @@ serve(async (req) => {
 
     const { eventId, djIds, contractType, producerId } = await req.json();
 
-    console.log('Creating contracts for event:', eventId, 'DJs:', djIds);
+    console.log('Creating contracts for event:', eventId, 'DJs:', djIds, 'Type:', contractType);
 
     if (!eventId || !djIds || djIds.length === 0) {
       throw new Error('Event ID and DJ IDs are required');
@@ -33,16 +33,44 @@ serve(async (req) => {
 
     if (eventError) throw eventError;
 
-    // Buscar template de contrato nas company_settings
+    // Buscar um template de contrato válido
+    const { data: contractTemplate, error: templateError } = await supabase
+      .from('contract_templates')
+      .select('id, template_content, name')
+      .eq('type', contractType || 'basic')
+      .eq('is_default', true)
+      .single();
+
+    // Se não encontrar template padrão, buscar qualquer template do tipo
+    let template = contractTemplate?.template_content;
+    let templateId = contractTemplate?.id;
+
+    if (!template) {
+      const { data: anyTemplate } = await supabase
+        .from('contract_templates')
+        .select('id, template_content, name')
+        .eq('type', contractType || 'basic')
+        .limit(1)
+        .single();
+      
+      template = anyTemplate?.template_content;
+      templateId = anyTemplate?.id;
+    }
+
+    // Buscar dados da empresa para fallback
     const { data: settings, error: settingsError } = await supabase
       .from('company_settings')
       .select(`contract_basic, contract_intermediate, contract_premium, company_name`)
       .single();
 
-    if (settingsError) throw settingsError;
+    // Fallback para company_settings se não houver templates
+    if (!template) {
+      if (settingsError) throw settingsError;
 
-    const templateKey = `contract_${contractType || 'basic'}` as 'contract_basic' | 'contract_intermediate' | 'contract_premium';
-    const template = settings[templateKey] || settings.contract_basic;
+      const templateKey = `contract_${contractType || 'basic'}` as 'contract_basic' | 'contract_intermediate' | 'contract_premium';
+      template = settings[templateKey] || settings.contract_basic;
+      templateId = null; // Não há template_id para company_settings
+    }
 
     if (!template) {
       throw new Error('Contract template not found');
@@ -58,24 +86,6 @@ serve(async (req) => {
     if (producerError) throw producerError;
 
     const producerName = producer?.company_name || producer?.name || producer?.email || 'Produtor';
-
-    // Buscar nome de todos os DJs selecionados para uso em {{djNames}} / {DJ_NAMES}
-    const { data: allDjsData } = await supabase
-      .from('djs')
-      .select('id, artist_name, real_name')
-      .in('id', djIds);
-    const allDjNames = (allDjsData || []).map((d: any) => d?.artist_name || d?.real_name || 'DJ').join(', ');
-
-    // Helper para formatar data apenas com dia/mês/ano (sem horário) e sem alterar o dia
-    const formatDateOnlyBR = (value: string | null | undefined) => {
-      if (!value) return '';
-      const raw = String(value);
-      const dateStr = raw.includes('T') ? raw.split('T')[0] : raw;
-      const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if (m) return `${m[3]}/${m[2]}/${m[1]}`;
-      const d = new Date(raw);
-      return Number.isNaN(d.getTime()) ? raw : d.toLocaleDateString('pt-BR');
-    };
 
     // Criar um contrato para cada DJ
     const contracts = [];
@@ -106,30 +116,35 @@ serve(async (req) => {
 
       // Preencher template
       let contractContent = template;
+      
+      // Formatar data do evento sem horário (apenas data)
+      let eventDateFormatted = '';
+      if (event.event_date) {
+        // Extrair apenas a parte da data (YYYY-MM-DD) ignorando qualquer informação de hora/timezone
+        const dateOnly = event.event_date.split('T')[0];
+        const [year, month, day] = dateOnly.split('-');
+        eventDateFormatted = `${day}/${month}/${year}`;
+      }
+      
+      // Formatar data de hoje sem horário
+      const today = new Date();
+      const todayFormatted = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+      
       const variables: Record<string, string> = {
         '{{eventName}}': event.event_name || '',
-        '{{eventDate}}': formatDateOnlyBR(event.event_date as any),
+        '{{eventDate}}': eventDateFormatted || '',
         '{{location}}': event.location || '',
         '{{city}}': event.city || '',
         '{{cacheValue}}': djFee?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || 'R$ 0,00',
         '{{djName}}': djName,
-        '{{djNames}}': allDjNames,
         '{{producerName}}': producerName,
-        '{{companyName}}': settings.company_name || producerName,
+        '{{companyName}}': settings?.company_name || producerName,
         '{{commissionRate}}': event.commission_rate?.toString() || '20',
-        '{{today}}': new Date().toLocaleDateString('pt-BR'),
+        '{{today}}': todayFormatted,
       };
 
-      // Substituir também variantes usadas em alguns templates (ex.: {DJ_NAME}, {DJ_NAMES}, {EVENT_DATE})
-      const replacements: Record<string, string> = {
-        ...variables,
-        '{DJ_NAME}': djName,
-        '{DJ_NAMES}': allDjNames,
-        '{EVENT_DATE}': formatDateOnlyBR(event.event_date as any),
-      };
-
-      Object.entries(replacements).forEach(([key, value]) => {
-        contractContent = contractContent.replace(new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
+      Object.entries(variables).forEach(([key, value]) => {
+        contractContent = contractContent.replace(new RegExp(key, 'g'), value);
       });
 
       // Criar contract_instance
@@ -139,7 +154,7 @@ serve(async (req) => {
           event_id: eventId,
           dj_id: djId,
           producer_id: producerId,
-          template_id: contractType || 'basic',
+          template_id: templateId, // UUID válido ou null
           contract_content: contractContent,
           contract_value: djFee,
           signature_status: 'pending',

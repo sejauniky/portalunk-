@@ -7,7 +7,7 @@ import { useSupabaseData } from '../../../hooks/useSupabaseData';
 import { useAuth } from '../../../hooks/use-auth';
 import { eventService } from '../../../services/supabaseService';
 import paymentService from '../../../services/paymentService';
-import ContractModal from '../../event-calendar/components/ContractModal';
+import { ContractViewModal } from '../../event-calendar/components/ContractViewModal';
 import { useToast } from '../../../hooks/use-toast';
 import DJMediaGallery from './DJMediaGallery';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +24,53 @@ const DJProfileDetail = ({
   const [activeTab, setActiveTab] = useState('agenda');
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [selectedEventForContract, setSelectedEventForContract] = useState(null);
+  const [contractInstance, setContractInstance] = useState(null);
+
+  const handleOpenContract = async (currentEvent) => {
+    setSelectedEventForContract(currentEvent);
+    try {
+      let { data, error } = await supabase
+        .from('contract_instances')
+        .select('id, contract_content, signature_status')
+        .eq('event_id', currentEvent.id)
+        .eq('dj_id', dj?.id)
+        .limit(1)
+        .maybeSingle();
+
+      if ((!data || error) && dj?.id) {
+        const { data: evInfo } = await supabase
+          .from('events')
+          .select('contract_type, producer_id')
+          .eq('id', currentEvent.id)
+          .maybeSingle();
+        const contractType = (evInfo && evInfo.contract_type) ? evInfo.contract_type : 'basic';
+        const ownerProducerId = (evInfo && evInfo.producer_id) ? evInfo.producer_id : (userProfile?.id || '');
+        if (ownerProducerId) {
+          await supabase.functions.invoke('create-event-contracts', {
+            body: { eventId: currentEvent.id, djIds: [dj.id], contractType, producerId: ownerProducerId }
+          });
+          const retry = await supabase
+            .from('contract_instances')
+            .select('id, contract_content, signature_status')
+            .eq('event_id', currentEvent.id)
+            .eq('dj_id', dj?.id)
+            .limit(1)
+            .maybeSingle();
+          data = retry.data;
+        }
+      }
+
+      if (data) {
+        const resolvedContent = (currentEvent && (currentEvent.contract_content || currentEvent.content)) || data.contract_content || '';
+        setContractInstance({ id: String(data.id), content: resolvedContent, signature_status: data.signature_status || 'pending' });
+        setIsContractModalOpen(true);
+      } else {
+        toast({ title: 'Contrato não disponível', description: 'Nenhuma instância de contrato encontrada para este evento.', variant: 'destructive' });
+      }
+    } catch (e) {
+      toast({ title: 'Erro', description: 'Falha ao abrir contrato.', variant: 'destructive' });
+    }
+  };
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar'
   const [selectedDate, setSelectedDate] = useState(null);
 
@@ -301,8 +348,7 @@ const DJProfileDetail = ({
                         {isAttached && (
                           <button
                             onClick={() => {
-                              setSelectedEventForContract(event);
-                              setIsContractModalOpen(true);
+                              handleOpenContract(event);
                             }}
                             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all flex items-center gap-2 ${
                               isSigned
@@ -359,15 +405,12 @@ const DJProfileDetail = ({
                           if (!event?.id) return;
                           try {
                             const { data } = await supabase
-                              .from('digital_signatures')
-                              .select('*')
-                              .eq('contract_instance_id', event.id)
-                              .eq('signer_type', 'producer')
+                              .from('contract_instances')
+                              .select('signature_status')
+                              .eq('event_id', event.id)
+                              .eq('dj_id', dj?.id)
                               .maybeSingle();
-
-                            if (data) {
-                              setIsSigned(true);
-                            }
+                            setIsSigned((data?.signature_status || '').toLowerCase() === 'signed');
                           } catch (error) {
                             setIsSigned(false);
                           }
@@ -392,9 +435,8 @@ const DJProfileDetail = ({
                             {isAttached && (
                               <button
                                 onClick={() => {
-                                  setSelectedEventForContract(event);
-                                  setIsContractModalOpen(true);
-                                }}
+                              handleOpenContract(event);
+                            }}
                                 className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all flex items-center gap-2 ${
                                   isSigned
                                     ? 'bg-emerald-600/20 border border-emerald-600/40 text-emerald-200 hover:bg-emerald-600/30'
@@ -483,17 +525,28 @@ const DJProfileDetail = ({
       </div>
     </div>
 
-    <ContractModal isOpen={isContractModalOpen} onClose={() => {
-      setIsContractModalOpen(false);
-      setSelectedEventForContract(null);
-    }} event={selectedEventForContract} onSign={async () => {
-      setIsContractModalOpen(false);
-      setSelectedEventForContract(null);
-      toast({
-        title: 'Contrato assinado',
-        description: 'O contrato foi assinado com sucesso!'
-      });
-    }} />
+    <ContractViewModal
+      open={isContractModalOpen}
+      onOpenChange={(open) => {
+        setIsContractModalOpen(open);
+        if (!open) {
+          setSelectedEventForContract(null);
+          setContractInstance(null);
+        }
+      }}
+      contractId={contractInstance?.id || ''}
+      contractContent={contractInstance?.content || (selectedEventForContract?.contract_content || '')}
+      eventName={selectedEventForContract?.event_name || selectedEventForContract?.title || 'Evento'}
+      signatureStatus={contractInstance?.signature_status || 'pending'}
+      eventId={selectedEventForContract?.id || ''}
+      djId={dj?.id || undefined}
+      onSign={async () => {
+        setIsContractModalOpen(false);
+        setSelectedEventForContract(null);
+        setContractInstance(prev => prev ? { ...prev, signature_status: 'signed' } : prev);
+        toast({ title: 'Contrato assinado', description: 'O contrato foi assinado com sucesso!' });
+      }}
+    />
   </div>;
 };
 export default DJProfileDetail;

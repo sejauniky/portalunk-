@@ -87,7 +87,9 @@ export const ContractViewModal = ({
     try {
       let toUseId = resolvedId && resolvedId.trim().length > 0 ? resolvedId : "";
 
+      // Ensure we have a contract instance id for this event+dj
       if (!toUseId && eventId && djId) {
+        // 1) Try to fetch existing
         const existing = await supabase
           .from("contract_instances")
           .select("id")
@@ -97,6 +99,60 @@ export const ContractViewModal = ({
         if (existing?.data?.id) {
           toUseId = String(existing.data.id);
           setResolvedId(toUseId);
+        } else {
+          // 2) Try to create via edge function, then retry-read a few times
+          try {
+            const { data: evInfo } = await supabase
+              .from("events")
+              .select("contract_type, producer_id, contract_content, cache_value")
+              .eq("id", eventId)
+              .maybeSingle();
+            const contractType = (evInfo as any)?.contract_type || "basic";
+            const ownerProducerId = (evInfo as any)?.producer_id || (await supabase.auth.getUser()).data.user?.id || null;
+            if (ownerProducerId) {
+              try {
+                await supabase.functions.invoke('create-event-contracts', {
+                  body: { eventId, djIds: [djId], contractType, producerId: ownerProducerId }
+                });
+              } catch (_) {}
+              for (let i = 0; i < 3 && !toUseId; i++) {
+                await new Promise((r) => setTimeout(r, 350));
+                const retry = await supabase
+                  .from("contract_instances")
+                  .select("id")
+                  .eq("event_id", eventId)
+                  .eq("dj_id", djId)
+                  .maybeSingle();
+                if (retry?.data?.id) {
+                  toUseId = String(retry.data.id);
+                  setResolvedId(toUseId);
+                  break;
+                }
+              }
+
+              // 3) As final fallback, create a minimal instance directly
+              if (!toUseId) {
+                try {
+                  const minimal = {
+                    event_id: eventId,
+                    dj_id: djId,
+                    contract_content: (evInfo as any)?.contract_content || "",
+                    contract_value: (evInfo as any)?.cache_value || 0,
+                    signature_status: 'pending',
+                  } as any;
+                  const direct = await supabase
+                    .from('contract_instances')
+                    .insert(minimal)
+                    .select('id')
+                    .maybeSingle();
+                  if (direct?.data?.id) {
+                    toUseId = String(direct.data.id);
+                    setResolvedId(toUseId);
+                  }
+                } catch (_) {}
+              }
+            }
+          } catch (_) {}
         }
       }
 
@@ -108,7 +164,7 @@ export const ContractViewModal = ({
       const nowIso = new Date().toISOString();
       const signerName = userData?.user?.email || "Produtor";
 
-      // Fallback: update directly if edge function is unavailable in the project
+      // Try edge function first
       try {
         const resp = await supabase.functions.invoke('process-digital-signature', {
           body: {
@@ -120,8 +176,8 @@ export const ContractViewModal = ({
           },
         });
         if ((resp as any)?.error) throw new Error((resp as any)?.error?.message || 'Falha ao processar assinatura');
-      } catch (fnErr) {
-        // Direct update (mirrors ContractCard.tsx) for environments without the edge function
+      } catch (_) {
+        // Direct update if edge function not available
         const { error: updErr } = await supabase
           .from('contract_instances')
           .update({ signature_status: 'signed', signed_at: nowIso })

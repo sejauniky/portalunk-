@@ -747,7 +747,6 @@ const EventCalendar = () => {
               await supabase
                 .from("events")
                 .update({
-                  contract_content: processedContent,
                   contract_type: contractType
                 })
                 .eq("id", eventId);

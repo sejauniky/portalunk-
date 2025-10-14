@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
 import { FileText, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -31,7 +30,6 @@ export const ContractViewModal = ({
   djId,
 }: ContractViewModalProps) => {
   const [isSigning, setIsSigning] = useState(false);
-  const [agree, setAgree] = useState(false);
   const [resolvedId, setResolvedId] = useState<string>(contractId || "");
   const [resolving, setResolving] = useState(false);
 
@@ -60,7 +58,7 @@ export const ContractViewModal = ({
           .eq("id", eventId)
           .maybeSingle();
         const contractType = (evInfo as any)?.contract_type || "basic";
-        const ownerProducerId = (evInfo as any)?.producer_id || null;
+        const ownerProducerId = (evInfo as any)?.producer_id || (await supabase.auth.getUser()).data.user?.id || null;
         if (ownerProducerId) {
           try {
             await supabase.functions.invoke('create-event-contracts', {
@@ -89,7 +87,9 @@ export const ContractViewModal = ({
     try {
       let toUseId = resolvedId && resolvedId.trim().length > 0 ? resolvedId : "";
 
+      // Ensure we have a contract instance id for this event+dj
       if (!toUseId && eventId && djId) {
+        // 1) Try to fetch existing
         const existing = await supabase
           .from("contract_instances")
           .select("id")
@@ -99,6 +99,62 @@ export const ContractViewModal = ({
         if (existing?.data?.id) {
           toUseId = String(existing.data.id);
           setResolvedId(toUseId);
+        } else {
+          // 2) Try to create via edge function, then retry-read a few times
+          try {
+            const { data: evInfo } = await supabase
+              .from("events")
+              .select("contract_type, producer_id, contract_content, cache_value")
+              .eq("id", eventId)
+              .maybeSingle();
+            const contractType = (evInfo as any)?.contract_type || "basic";
+            const ownerProducerId = (evInfo as any)?.producer_id || (await supabase.auth.getUser()).data.user?.id || null;
+            if (ownerProducerId) {
+              try {
+                await supabase.functions.invoke('create-event-contracts', {
+                  body: { eventId, djIds: [djId], contractType, producerId: ownerProducerId }
+                });
+              } catch (_) {}
+              for (let i = 0; i < 3 && !toUseId; i++) {
+                await new Promise((r) => setTimeout(r, 350));
+                const retry = await supabase
+                  .from("contract_instances")
+                  .select("id")
+                  .eq("event_id", eventId)
+                  .eq("dj_id", djId)
+                  .maybeSingle();
+                if (retry?.data?.id) {
+                  toUseId = String(retry.data.id);
+                  setResolvedId(toUseId);
+                  break;
+                }
+              }
+
+              // 3) As final fallback, create a minimal instance directly
+              if (!toUseId) {
+                try {
+                  const minimal = {
+                    event_id: eventId,
+                    dj_id: djId,
+                    producer_id: ownerProducerId,
+                    template_id: contractType,
+                    contract_content: (evInfo as any)?.contract_content || contractContent || "",
+                    contract_value: (evInfo as any)?.cache_value || 0,
+                    signature_status: 'pending',
+                  } as any;
+                  const direct = await supabase
+                    .from('contract_instances')
+                    .insert(minimal)
+                    .select('id')
+                    .maybeSingle();
+                  if (direct?.data?.id) {
+                    toUseId = String(direct.data.id);
+                    setResolvedId(toUseId);
+                  }
+                } catch (_) {}
+              }
+            }
+          } catch (_) {}
         }
       }
 
@@ -110,7 +166,7 @@ export const ContractViewModal = ({
       const nowIso = new Date().toISOString();
       const signerName = userData?.user?.email || "Produtor";
 
-      // Fallback: update directly if edge function is unavailable in the project
+      // Try edge function first
       try {
         const resp = await supabase.functions.invoke('process-digital-signature', {
           body: {
@@ -122,8 +178,8 @@ export const ContractViewModal = ({
           },
         });
         if ((resp as any)?.error) throw new Error((resp as any)?.error?.message || 'Falha ao processar assinatura');
-      } catch (fnErr) {
-        // Direct update (mirrors ContractCard.tsx) for environments without the edge function
+      } catch (_) {
+        // Direct update if edge function not available
         const { error: updErr } = await supabase
           .from('contract_instances')
           .update({ signature_status: 'signed', signed_at: nowIso })
@@ -151,7 +207,7 @@ export const ContractViewModal = ({
   };
 
   const isSigned = signatureStatus === "signed";
-  const disablePrimary = isSigning || resolving || !agree || (!resolvedId && !!eventId && !!djId);
+  const disablePrimary = isSigning || resolving;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -176,18 +232,10 @@ export const ContractViewModal = ({
               <span className="font-medium">Contrato Assinado</span>
             </div>
           ) : (
-            <>
-              <div className="flex items-center gap-2 mr-auto">
-                <Checkbox id="agree" checked={agree} onCheckedChange={(v) => setAgree(Boolean(v))} />
-                <label htmlFor="agree" className="text-sm select-none">
-                  Li e concordo com os termos do contrato
-                </label>
-              </div>
-              <Button onClick={handleSign} disabled={disablePrimary} className="gap-2">
-                <Check className="h-4 w-4" />
-                {isSigning || resolving ? "Preparando..." : "Salvar"}
-              </Button>
-            </>
+            <Button onClick={handleSign} disabled={disablePrimary} className="gap-2 mr-auto">
+              <Check className="h-4 w-4" />
+              {isSigning || resolving ? "Preparando..." : "✓ Li e Concordo"}
+            </Button>
           )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Fechar

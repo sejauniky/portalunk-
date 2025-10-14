@@ -16,22 +16,7 @@ export const eventService = {
       // Simplificando a query para evitar joins complexos
       const { data: events, error } = await supabase
         .from('events')
-        .select(`
-          *,
-          dj:djs (
-            id,
-            name,
-            artist_name,
-            email
-          ),
-          producer:producers (
-            id,
-            name,
-            company_name,
-            email,
-            profile_id
-          )
-        `)
+        .select('*')
         .order('event_date', { ascending: false });
 
       if (error) throw error;

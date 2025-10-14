@@ -19,11 +19,11 @@ import {
   ArrowLeft,
   Save,
   Mail,
+  Phone,
   MapPin,
   Music,
   Instagram,
   Youtube,
-  Phone,
   Headphones,
   Calendar,
   DollarSign,
@@ -64,7 +64,7 @@ interface DJ {
   spotify_url: string | null;
   avatar_url: string | null;
   background_image_url: string | null;
- 
+
 }
 
 interface MediaFile {
@@ -101,6 +101,8 @@ type DJUpdatePayload = {
   artist_name: string;
   real_name?: string | null;
   email?: string | null;
+  phone?: string | null;
+  bio?: string | null;
   genre?: string | null;
   base_price?: number | null;
   instagram_url?: string | null;
@@ -194,11 +196,6 @@ const formatDate = (value?: string | null) => {
   if (!value) return "-";
 
   try {
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      const [y, m, d] = value.split('-').map(Number);
-      const local = new Date(y, (m ?? 1) - 1, d);
-      return local.toLocaleDateString("pt-BR");
-    }
     return new Date(value).toLocaleDateString("pt-BR");
   } catch (error) {
     console.error("Date formatting failed", error);
@@ -488,13 +485,14 @@ const DJsProfile = () => {
       artist_name: (formData.get("artist_name")?.toString() ?? "").trim(),
       real_name: toNullableString(formData.get("real_name")),
       email: toNullableString(formData.get("email")),
+      phone: toNullableString(formData.get("phone")),
+      bio: toNullableString(formData.get("bio")),
       genre: toNullableString(formData.get("genre")),
       base_price: Number.isFinite(basePriceValue) ? basePriceValue : null,
       instagram_url: toNullableString(formData.get("instagram_url")),
       youtube_url: toNullableString(formData.get("youtube_url")),
       tiktok_url: toNullableString(formData.get("tiktok_url")),
       soundcloud_url: toNullableString(formData.get("soundcloud_url")),
-      birth_date: toNullableString(formData.get("birth_date")),
     };
 
     updateDJMutation.mutate(payload);
@@ -585,7 +583,7 @@ const DJsProfile = () => {
       {items.map((item) => {
         const driveLink = item.metadata?.drive_link;
         const isBackdrop = item.file_category === "backdrop";
-        
+
         return (
           <div key={item.id} className="group relative overflow-hidden rounded-xl border border-border/60">
             {isBackdrop && driveLink ? (
@@ -630,9 +628,9 @@ const DJsProfile = () => {
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {items.map((item) => (
         <div key={item.id} className="group relative overflow-hidden rounded-xl border border-border/60">
-          <img 
-            src={item.file_url} 
-            alt={item.file_name} 
+          <img
+            src={item.file_url}
+            alt={item.file_name}
             className="h-32 w-full object-cover"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
@@ -840,484 +838,499 @@ const DJsProfile = () => {
         Voltar
       </Button>
 
-        <section className="relative mb-8 overflow-hidden rounded-3xl border border-white/10 bg-[#0b0f1f]/95 shadow-[0_35px_120px_-45px_rgba(107,63,247,0.65)]">
-          <div
-            className="absolute inset-0 opacity-65"
-            style={{
-              backgroundImage: dj.background_image_url ? `url(${dj.background_image_url})` : dj.avatar_url ? `url(${dj.avatar_url})` : undefined,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundRepeat: "no-repeat",
-              filter: dj.background_image_url || dj.avatar_url ? "blur(4px)" : undefined,
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/65 to-background" />
+      <section className="relative mb-8 overflow-hidden rounded-3xl border border-white/10 bg-[#0b0f1f]/95 shadow-[0_35px_120px_-45px_rgba(107,63,247,0.65)]">
+        <div
+          className="absolute inset-0 opacity-65"
+          style={{
+            backgroundImage: dj.background_image_url ? `url(${dj.background_image_url})` : dj.avatar_url ? `url(${dj.avatar_url})` : undefined,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            filter: dj.background_image_url || dj.avatar_url ? "blur(4px)" : undefined,
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/65 to-background" />
 
-          <div className="relative flex flex-col gap-6 p-8 lg:flex-row lg:items-center">
-            <Avatar className="h-32 w-32 border-4 border-white/20 shadow-[0_12px_35px_rgba(8,15,35,0.55)]">
-              <AvatarImage
-                className="object-cover object-center"
-                src={dj.avatar_url ?? undefined}
-                alt={dj.artist_name ?? undefined}
-              />
-              <AvatarFallback className="bg-[#20183a] text-3xl font-semibold text-[#a685ff]">
-                {getInitials(dj.artist_name ?? dj.real_name)}
-              </AvatarFallback>
-            </Avatar>
+        <div className="relative flex flex-col gap-6 p-8 lg:flex-row lg:items-center">
+          <Avatar className="h-32 w-32 border-4 border-white/20 shadow-[0_12px_35px_rgba(8,15,35,0.55)]">
+            <AvatarImage
+              className="object-cover object-center"
+              src={dj.avatar_url ?? undefined}
+              alt={dj.artist_name ?? undefined}
+            />
+            <AvatarFallback className="bg-[#20183a] text-3xl font-semibold text-[#a685ff]">
+              {getInitials(dj.artist_name ?? dj.real_name)}
+            </AvatarFallback>
+          </Avatar>
 
-            <div className="flex-1 space-y-5">
-              <div>
-                <h1 className="text-4xl font-bold tracking-tight text-[rgba(200,237,248,1)] drop-shadow-[0_12px_40px_rgba(127,92,247,0.55)]">
-                  {dj.artist_name ?? "DJ"}
-                </h1>
-                <p className="text-lg text-white/80">{dj.real_name ?? "-"}</p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                {dj.genre && (
-                  <Badge variant="secondary" className="flex items-center gap-1 bg-purple-500/15 text-purple-200">
-                    <Music className="h-3 w-3" />
-                    {dj.genre}
-                  </Badge>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-2 text-sm text-white/70">
-                {dj.email && (
-                  <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
-                    <Mail className="h-4 w-4 text-[#7f5cf7]" />
-                    {dj.email}
-                  </span>
-                
-                )}
-                {dj.whatsapp && (
-                  <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
-                    <Phone className="h-4 w-4 text-emerald-400" />
-                    {dj.whatsapp}
-                  </span>
-                )}
-                {dj.location && (
-                  <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
-                    <MapPin className="h-4 w-4 text-sky-400" />
-                    {dj.location}
-                </span>
-                   )}
-                {dj.pix_key && (
-                  <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-white/80">
-                    PIX: {dj.pix_key}
-                  </span>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {dj.instagram_url && (
-                  <a
-                    href={dj.instagram_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full border border-pink-500/40 bg-pink-500/10 px-4 py-2 text-sm text-pink-400 transition hover:bg-pink-500/20"
-                  >
-                    <Instagram className="h-4 w-4" />
-                    Instagram
-                  </a>
-                )}
-                {dj.youtube_url && (
-                  <a
-                    href={dj.youtube_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-400 transition hover:bg-red-500/20"
-                  >
-                    <Youtube className="h-4 w-4" />
-                    YouTube
-                  </a>
-                )}
-                {dj.tiktok_url && (
-                  <a
-                    href={dj.tiktok_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition border bg-[rgba(0,42,54,0.91)] border-[rgba(132,94,234,0.4)] text-[rgba(134,95,248,0.81)] hover:bg-[rgba(0,42,54,0.91)]"
-                  >
-                    <Music className="h-4 w-4 text-[rgba(134,95,248,1)]" />
-                    TikTok
-                  </a>
-              )}
-                 {dj.spotify_url && (
-                  <a
-                    href={dj.spotify_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition border bg-[rgba(0,42,54,0.91)] border-[rgba(132,94,234,0.4)] text-[rgba(134,95,248,0.81)] hover:bg-[rgba(0,42,54,0.91)]"
-                  >
-                    <Music className="h-4 w-4 text-[rgba(134,95,248,1)]" />
-                    Spotify
-                </a>
-                  )}
-                {(dj.soundcloud_url ?? dj.soundcloud) && (
-                  <a
-                    href={dj.soundcloud_url ?? dj.soundcloud ?? undefined}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-500/10 px-4 py-2 text-sm text-orange-300 transition hover:bg-orange-500/20"
-                  >
-                    <Headphones className="h-4 w-4" />
-                    SoundCloud
-                  </a>
-                )}
-                {dj.portifolio_url && (
-                  <a
-                    href={dj.portifolio_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-2 text-sm text-sky-300 transition hover:bg-sky-500/20"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Portfolio
-                  </a>
-                )}
-              </div>
+          <div className="flex-1 space-y-5">
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight text-[rgba(197,156,255,1)] drop-shadow-[0_12px_40px_rgba(127,92,247,0.55)]">
+                {dj.artist_name ?? "DJ"}
+              </h1>
+              <p className="text-lg text-white/80">{dj.real_name ?? "-"}</p>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-              <input ref={backdropInputRef} type="file" accept="image/*" className="hidden" onChange={handleBackdropChange} />
+            <div className="flex flex-wrap items-center gap-2">
+              {dj.genre && (
+                <Badge variant="secondary" className="flex items-center gap-1 bg-purple-500/15 text-purple-200">
+                  <Music className="h-3 w-3" />
+                  {dj.genre}
+                </Badge>
+              )}
+            </div>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant={isEditing ? "outline" : "default"}
-                    className="bg-black/60 px-6 py-2 text-sm font-semibold text-white shadow-[0_10px_40px_rgba(0,0,0,0.35)] transition hover:bg-black/80"
-                  >
-                    <p>Editar</p>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); avatarInputRef.current?.click(); }}>
-                    Alterar foto de perfil
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); backdropInputRef.current?.click(); }}>
-                    Alterar imagem de fundo
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIsEditDialogOpen(true); }}>
-                    Editar dados do perfil
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            <div className="flex flex-wrap gap-2 text-sm text-white/70">
+              {dj.email && (
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
+                  <Mail className="h-4 w-4 text-[#7f5cf7]" />
+                  {dj.email}
+                </span>
+              )}
+              {dj.phone && (
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
+                  <Phone className="h-4 w-4 text-emerald-400" />
+                  {dj.phone}
+                </span>
+              )}
+              {dj.whatsapp && (
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
+                  <Phone className="h-4 w-4 text-emerald-400" />
+                  {dj.whatsapp}
+                </span>
+              )}
+              {dj.location && (
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
+                  <MapPin className="h-4 w-4 text-sky-400" />
+                  {dj.location}
+                </span>
+              )}
+              {dj.pix_key && (
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-white/80">
+                  PIX: {dj.pix_key}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {dj.instagram_url && (
+                <a
+                  href={dj.instagram_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-pink-500/40 bg-pink-500/10 px-4 py-2 text-sm text-pink-400 transition hover:bg-pink-500/20"
+                >
+                  <Instagram className="h-4 w-4" />
+                  Instagram
+                </a>
+              )}
+              {dj.youtube_url && (
+                <a
+                  href={dj.youtube_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-400 transition hover:bg-red-500/20"
+                >
+                  <Youtube className="h-4 w-4" />
+                  YouTube
+                </a>
+              )}
+              {dj.tiktok_url && (
+                <a
+                  href={dj.tiktok_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition border bg-[rgba(0,42,54,0.91)] border-[rgba(132,94,234,0.4)] text-[rgba(134,95,248,0.81)] hover:bg-[rgba(0,42,54,0.91)]"
+                >
+                  <Music className="h-4 w-4 text-[rgba(134,95,248,1)]" />
+                  TikTok
+                </a>
+              )}
+              {dj.spotify_url && (
+                <a
+                  href={dj.spotify_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition border bg-[rgba(0,42,54,0.91)] border-[rgba(132,94,234,0.4)] text-[rgba(134,95,248,0.81)] hover:bg-[rgba(0,42,54,0.91)]"
+                >
+                  <Music className="h-4 w-4 text-[rgba(134,95,248,1)]" />
+                  Spotify
+                </a>
+              )}
+              {(dj.soundcloud_url ?? dj.soundcloud) && (
+                <a
+                  href={dj.soundcloud_url ?? dj.soundcloud ?? undefined}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-500/10 px-4 py-2 text-sm text-orange-300 transition hover:bg-orange-500/20"
+                >
+                  <Headphones className="h-4 w-4" />
+                  SoundCloud
+                </a>
+              )}
+              {dj.portifolio_url && (
+                <a
+                  href={dj.portifolio_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-sky-500/40 bg-sky-500/10 px-4 py-2 text-sm text-sky-300 transition hover:bg-sky-500/20"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Portfolio
+                </a>
+              )}
             </div>
           </div>
-        </section>
 
-        <div className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard
-            title="Total de Eventos"
-            value={totalEvents}
-            description={`${completedEvents} realizados`}
-            icon={Calendar}
-       
-          />
-          <MetricCard
-            title="Ganhos Líquidos"
-            value={formatCurrency(netEarnings)}
-            description={`Após comissão UNK (${commissionRate}% )`}
-            icon={TrendingUp}
-            accent="#60a5fa"
-            valueClassName="text-sky-300"
-          />
-          <MetricCard
-            title="Mídias"
-            value={media.length}
-            description="Arquivos cadastrados"
-            icon={ImageIcon}
-            accent="#fbbf24"
-            valueClassName="text-amber-300"
-          />
+          <div className="flex flex-col gap-3">
+            <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+            <input ref={backdropInputRef} type="file" accept="image/*" className="hidden" onChange={handleBackdropChange} />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant={isEditing ? "outline" : "default"}
+                  className="bg-black/60 px-6 py-2 text-sm font-semibold text-white shadow-[0_10px_40px_rgba(0,0,0,0.35)] transition hover:bg-black/80"
+                >
+                  <p>Editar</p>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); avatarInputRef.current?.click(); }}>
+                  Alterar foto de perfil
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); backdropInputRef.current?.click(); }}>
+                  Alterar imagem de fundo
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIsEditDialogOpen(true); }}>
+                  Editar dados do perfil
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
+      </section>
 
-        <Card className="border border-white/10 bg-black/70 backdrop-blur-xl shadow-[0_40px_120px_-60px_rgba(0,0,0,0.7)]">
-          <CardContent className="p-0">
-            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
-              <TabsList className="grid w-full grid-cols-4 rounded-2xl border border-white/10 bg-black/30 p-1">
-                <TabsTrigger
-                  value="overview"
-                  className="rounded-xl px-4 py-2 text-sm font-medium text-white/60 transition data-[state=active]:bg-black/80 data-[state=active]:text-white data-[state=active]:shadow-[0_12px_30px_-18px_rgba(127,92,247,0.55)]"
-                >
-                  Visão Geral
-                </TabsTrigger>
-                <TabsTrigger
-                  value="agenda"
-                  className="rounded-xl px-4 py-2 text-sm font-medium text-white/60 transition data-[state=active]:bg-black/80 data-[state=active]:text-white data-[state=active]:shadow-[0_12px_30px_-18px_rgba(63,188,255,0.5)]"
-                >
-                  Eventos
-                </TabsTrigger>
-                <TabsTrigger
-                  value="financial"
-                  className="rounded-xl px-4 py-2 text-sm font-medium text-white/60 transition data-[state=active]:bg-black/80 data-[state=active]:text-white data-[state=active]:shadow-[0_12px_30px_-18px_rgba(72,187,120,0.5)]"
-                >
-                  Financeiro
-                </TabsTrigger>
-                <TabsTrigger
-                  value="media"
-                  className="rounded-xl px-4 py-2 text-sm font-medium text-white/60 transition data-[state=active]:bg-black/80 data-[state=active]:text-white data-[state=active]:shadow-[0_12px_30px_-18px_rgba(251,191,36,0.45)]"
-                >
-                  Mídias
-                </TabsTrigger>
-              </TabsList>
+      <div className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          title="Total de Eventos"
+          value={totalEvents}
+          description={`${completedEvents} realizados`}
+          icon={Calendar}
 
-              <TabsContent value="overview" className="space-y-6 p-6">
-                <div className="grid gap-6">
-                  <Card className="glass-card">
-                    <CardHeader>
-                      <CardTitle>Informações Pessoais</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label className="text-muted-foreground">Nome Real</Label>
-                        <p className="text-lg font-medium text-foreground">{dj.real_name ?? "-"}</p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground">Email</Label>
-                        <p className="text-lg font-medium text-foreground">{dj.email ?? "-"}</p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground">Data de Nascimento</Label>
-                        <p className="text-lg font-medium text-foreground">{formatDate(dj.birth_date)}</p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground">WhatsApp</Label>
-                        <p className="text-lg font-medium text-foreground">{dj.whatsapp ?? "-"}</p>
-                      </div>
+        />
+        <MetricCard
+          title="Ganhos Líquidos"
+          value={formatCurrency(netEarnings)}
+          description={`Após comissão UNK (${commissionRate}% )`}
+          icon={TrendingUp}
+          accent="#60a5fa"
+          valueClassName="text-sky-300"
+        />
+        <MetricCard
+          title="Mídias"
+          value={media.length}
+          description="Arquivos cadastrados"
+          icon={ImageIcon}
+          accent="#fbbf24"
+          valueClassName="text-amber-300"
+        />
+      </div>
+
+      <Card className="border border-white/10 bg-black/70 backdrop-blur-xl shadow-[0_40px_120px_-60px_rgba(0,0,0,0.7)]">
+        <CardContent className="p-0">
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
+            <TabsList className="grid w-full grid-cols-4 rounded-2xl border border-white/10 bg-black/30 p-1">
+              <TabsTrigger
+                value="overview"
+                className="rounded-xl px-4 py-2 text-sm font-medium text-white/60 transition data-[state=active]:bg-black/80 data-[state=active]:text-white data-[state=active]:shadow-[0_12px_30px_-18px_rgba(127,92,247,0.55)]"
+              >
+                Visão Geral
+              </TabsTrigger>
+              <TabsTrigger
+                value="agenda"
+                className="rounded-xl px-4 py-2 text-sm font-medium text-white/60 transition data-[state=active]:bg-black/80 data-[state=active]:text-white data-[state=active]:shadow-[0_12px_30px_-18px_rgba(63,188,255,0.5)]"
+              >
+                Eventos
+              </TabsTrigger>
+              <TabsTrigger
+                value="financial"
+                className="rounded-xl px-4 py-2 text-sm font-medium text-white/60 transition data-[state=active]:bg-black/80 data-[state=active]:text-white data-[state=active]:shadow-[0_12px_30px_-18px_rgba(72,187,120,0.5)]"
+              >
+                Financeiro
+              </TabsTrigger>
+              <TabsTrigger
+                value="media"
+                className="rounded-xl px-4 py-2 text-sm font-medium text-white/60 transition data-[state=active]:bg-black/80 data-[state=active]:text-white data-[state=active]:shadow-[0_12px_30px_-18px_rgba(251,191,36,0.45)]"
+              >
+                Mídias
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-6 p-6">
+              <div className="grid gap-6">
+                <Card className="glass-card">
+                  <CardHeader>
+                    <CardTitle>Informações Pessoais</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label className="text-muted-foreground">Nome Real</Label>
+                      <p className="text-lg font-medium text-foreground">{dj.real_name ?? "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Email</Label>
+                      <p className="text-lg font-medium text-foreground">{dj.email ?? "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Data de Nascimento</Label>
+                      <p className="text-lg font-medium text-foreground">{formatDate(dj.birth_date)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">WhatsApp</Label>
+                      <p className="text-lg font-medium text-foreground">{dj.whatsapp ?? "-"}</p>
+                    </div>
                     <div>
                       <Label className="text-muted-foreground">CPF</Label>
-                        <p className="text-lg font-medium text-foreground">{dj.cpf ?? "-"}</p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground">Localização</Label>
-                        <p className="text-lg font-medium text-foreground">{dj.location ?? "-"}</p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground">Cachê Base</Label>
-                        <p className="text-lg font-medium text-foreground">{formatCurrency(dj.base_price)}</p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground">Chave PIX</Label>
-                        <p className="text-lg font-medium text-foreground">{dj.pix_key ?? "-"}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
+                      <p className="text-lg font-medium text-foreground">{dj.cpf ?? "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Localização</Label>
+                      <p className="text-lg font-medium text-foreground">{dj.location ?? "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Cachê Base</Label>
+                      <p className="text-lg font-medium text-foreground">{formatCurrency(dj.base_price)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground">Chave PIX</Label>
+                      <p className="text-lg font-medium text-foreground">{dj.pix_key ?? "-"}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
 
-              <TabsContent value="agenda" className="p-6">
-                {isEditing ? (
-                  <Card className="glass-card">
-                    <CardHeader>
-                      <CardTitle>Editar Informações</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <form onSubmit={handleSave} className="space-y-4">
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div className="space-y-2">
-                            <Label htmlFor="artist_name">Nome Artístico</Label>
-                            <Input id="artist_name" name="artist_name" defaultValue={dj.artist_name ?? ""} required />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="real_name">Nome Real</Label>
-                            <Input id="real_name" name="real_name" defaultValue={dj.real_name ?? ""} />
-                          </div>
-                        </div>
-
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input id="email" name="email" type="email" defaultValue={dj.email ?? ""} />
-                          </div>
-                             </div>
-
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div className="space-y-2">
-                            <Label htmlFor="birth_date">Data de Nascimento</Label>
-                            <Input id="birth_date" name="birth_date" type="date" defaultValue={formatDateForInput(dj.birth_date)} />
-                          </div>
-                        </div>
-
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div className="space-y-2">
-                            <Label htmlFor="genre">Gênero Musical</Label>
-                            <Input id="genre" name="genre" defaultValue={dj.genre ?? ""} />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="base_price">Cachê Base (R$)</Label>
-                            <Input
-                              id="base_price"
-                              name="base_price"
-                              type="number"
-                              step="0.01"
-                              defaultValue={dj.base_price ?? undefined}
-                            />
-                          </div>
-                        </div>
-                    
+            <TabsContent value="agenda" className="p-6">
+              {isEditing ? (
+                <Card className="glass-card">
+                  <CardHeader>
+                    <CardTitle>Editar Informações</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleSave} className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                          <Label htmlFor="instagram_url">Instagram URL</Label>
-                          <Input id="instagram_url" name="instagram_url" defaultValue={dj.instagram_url ?? ""} />
+                          <Label htmlFor="artist_name">Nome Artístico</Label>
+                          <Input id="artist_name" name="artist_name" defaultValue={dj.artist_name ?? ""} required />
                         </div>
-
                         <div className="space-y-2">
-                          <Label htmlFor="youtube_url">YouTube URL</Label>
-                          <Input id="youtube_url" name="youtube_url" defaultValue={dj.youtube_url ?? ""} />
+                          <Label htmlFor="real_name">Nome Real</Label>
+                          <Input id="real_name" name="real_name" defaultValue={dj.real_name ?? ""} />
                         </div>
+                      </div>
 
+                      <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                          <Label htmlFor="tiktok_url">TikTok URL</Label>
-                          <Input id="tiktok_url" name="tiktok_url" defaultValue={dj.tiktok_url ?? ""} />
+                          <Label htmlFor="email">Email</Label>
+                          <Input id="email" name="email" type="email" defaultValue={dj.email ?? ""} />
                         </div>
-
                         <div className="space-y-2">
-                          <Label htmlFor="soundcloud_url">SoundCloud URL</Label>
+                          <Label htmlFor="phone">Telefone</Label>
+                          <Input id="phone" name="phone" defaultValue={dj.phone ?? ""} />
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="genre">Gênero Musical</Label>
+                          <Input id="genre" name="genre" defaultValue={dj.genre ?? ""} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="base_price">Cachê Base (R$)</Label>
                           <Input
-                            id="soundcloud_url"
-                            name="soundcloud_url"
-                            defaultValue={dj.soundcloud_url ?? dj.soundcloud ?? ""}
+                            id="base_price"
+                            name="base_price"
+                            type="number"
+                            step="0.01"
+                            defaultValue={dj.base_price ?? undefined}
                           />
                         </div>
+                      </div>
 
-                        <div className="flex justify-end">
-                          <Button
-                            type="submit"
-                            loading={updateDJMutation.isPending}
-                            disabled={updateDJMutation.isPending}
-                            className="rounded-full bg-[#7f5cf7] px-6 py-2 text-sm font-semibold text-white shadow-[0_18px_45px_-20px_rgba(127,92,247,0.75)] transition hover:bg-[#6d4ee3]"
-                          >
-                            <Save className="mr-2 h-4 w-4" />
-                            Salvar Alterações
-                          </Button>
-                        </div>
-                      </form>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card className="glass-card">
-                    <CardHeader>
-                      <CardTitle>Próximos Eventos</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {isEventsLoading ? (
-                        <Loading message="Carregando eventos..." size="sm" className="py-8" />
-                      ) : events.length > 0 ? (
-                        <div className="space-y-3">
-                          {events.slice(0, 10).map((event) => (
-                            <div
-                              key={event.id}
-                              className="flex items-center justify-between rounded-lg border border-border/60 bg-background/80 p-4"
-                            >
-                              <div>
-                                <p className="font-medium text-foreground">{event.event_name ?? "Evento"}</p>
-                                <p className="text-sm text-muted-foreground">{formatDate(event.event_date)}</p>
-                              </div>
-                              <Badge variant="outline">{event.status ?? "Pendente"}</Badge>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="py-8 text-center text-muted-foreground">Nenhum evento agendado</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-              </TabsContent>
+                      <div className="space-y-2">
+                        <Label htmlFor="instagram_url">Instagram URL</Label>
+                        <Input id="instagram_url" name="instagram_url" defaultValue={dj.instagram_url ?? ""} />
+                      </div>
 
-              <TabsContent value="financial" className="space-y-6 p-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="youtube_url">YouTube URL</Label>
+                        <Input id="youtube_url" name="youtube_url" defaultValue={dj.youtube_url ?? ""} />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="tiktok_url">TikTok URL</Label>
+                        <Input id="tiktok_url" name="tiktok_url" defaultValue={dj.tiktok_url ?? ""} />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="soundcloud_url">SoundCloud URL</Label>
+                        <Input
+                          id="soundcloud_url"
+                          name="soundcloud_url"
+                          defaultValue={dj.soundcloud_url ?? dj.soundcloud ?? ""}
+                        />
+                      </div>
+
+                      <div className="flex justify-end">
+                        <Button
+                          type="submit"
+                          loading={updateDJMutation.isPending}
+                          disabled={updateDJMutation.isPending}
+                          className="rounded-full bg-[#7f5cf7] px-6 py-2 text-sm font-semibold text-white shadow-[0_18px_45px_-20px_rgba(127,92,247,0.75)] transition hover:bg-[#6d4ee3]"
+                        >
+                          <Save className="mr-2 h-4 w-4" />
+                          Salvar Alterações
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+              ) : (
                 <Card className="glass-card">
                   <CardHeader>
-                    <CardTitle>Pagamentos Pendentes</CardTitle>
+                    <CardTitle>Próximos Eventos</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {pendingPayments.length > 0 ? (
-                      <div className="space-y-4">
-                        {pendingPayments.map((event) => (
+                    {isEventsLoading ? (
+                      <Loading message="Carregando eventos..." size="sm" className="py-8" />
+                    ) : events.length > 0 ? (
+                      <div className="space-y-3">
+                        {events.slice(0, 10).map((event) => (
                           <div
                             key={event.id}
-                            className="flex items-center justify-between rounded-2xl border border-amber-500/40 bg-amber-500/10 px-5 py-4"
+                            className="flex items-center justify-between rounded-lg border border-border/60 bg-background/80 p-4"
                           >
                             <div>
-                              <p className="text-sm font-semibold text-foreground">{event.event_name ?? "Evento"}</p>
-                              <p className="text-xs text-muted-foreground">{formatDate(event.event_date)}</p>
+                              <p className="font-medium text-foreground">{event.event_name ?? "Evento"}</p>
+                              <p className="text-sm text-muted-foreground">{formatDate(event.event_date)}</p>
                             </div>
-                            <div className="text-right">
-                              <p className="text-base font-bold text-amber-300">
-                                {formatCurrency(event.event_dj_fee ?? event.fee ?? 0)}
-                              </p>
-                              <span className="mt-1 inline-flex items-center rounded-full border border-amber-400/40 bg-amber-500/15 px-3 py-0.5 text-xs font-semibold text-amber-200">
-                                Pendente
-                              </span>
-                            </div>
+                            <Badge variant="outline">{event.status ?? "Pendente"}</Badge>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="py-8 text-center text-muted-foreground">Nenhum pagamento pendente</p>
+                      <p className="py-8 text-center text-muted-foreground">Nenhum evento agendado</p>
                     )}
                   </CardContent>
                 </Card>
+              )}
+            </TabsContent>
 
-                <Card className="glass-card">
-                  <CardHeader>
-                    <CardTitle>Histórico de Pagamentos</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {paidPayments.length > 0 ? (
-                      <div className="space-y-4">
-                        {paidPayments.map((event) => (
-                          <div
-                            key={event.id}
-                            className="flex items-center justify-between rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-4"
-                          >
-                            <div>
-                              <p className="text-sm font-semibold text-foreground">{event.event_name ?? "Evento"}</p>
-                              <p className="text-xs text-muted-foreground">{formatDate(event.event_date)}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-base font-bold text-emerald-300">
-                                {formatCurrency(event.event_dj_fee ?? event.fee ?? 0)}
-                              </p>
-                              <span className="mt-1 inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-500/15 px-3 py-0.5 text-xs font-semibold text-emerald-200">
-                                Pago
-                              </span>
-                            </div>
+            <TabsContent value="financial" className="space-y-6 p-6">
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle>Pagamentos Pendentes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {pendingPayments.length > 0 ? (
+                    <div className="space-y-4">
+                      {pendingPayments.map((event) => (
+                        <div
+                          key={event.id}
+                          className="flex items-center justify-between rounded-2xl border border-amber-500/40 bg-amber-500/10 px-5 py-4"
+                        >
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">{event.event_name ?? "Evento"}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(event.event_date)}</p>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="py-8 text-center text-muted-foreground">Nenhum pagamento realizado</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                          <div className="text-right">
+                            <p className="text-base font-bold text-amber-300">
+                              {formatCurrency(event.event_dj_fee ?? event.fee ?? 0)}
+                            </p>
+                            <span className="mt-1 inline-flex items-center rounded-full border border-amber-400/40 bg-amber-500/15 px-3 py-0.5 text-xs font-semibold text-amber-200">
+                              Pendente
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="py-8 text-center text-muted-foreground">Nenhum pagamento pendente</p>
+                  )}
+                </CardContent>
+              </Card>
 
-              <TabsContent value="media" className="space-y-6 p-6">
-                <div className="flex justify-end">
-                  <Button
-                    onClick={() => setIsUploadDialogOpen(true)}
-                    className="rounded-full bg-[#7f5cf7] px-5 py-2 text-sm font-semibold text-white shadow-[0_18px_45px_-20px_rgba(127,92,247,0.65)] transition hover:bg-[#6d4ee3]"
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload de Mídia
-                  </Button>
-                </div>
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle>Histórico de Pagamentos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {paidPayments.length > 0 ? (
+                    <div className="space-y-4">
+                      {paidPayments.map((event) => (
+                        <div
+                          key={event.id}
+                          className="flex items-center justify-between rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-4"
+                        >
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">{event.event_name ?? "Evento"}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(event.event_date)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-base font-bold text-emerald-300">
+                              {formatCurrency(event.event_dj_fee ?? event.fee ?? 0)}
+                            </p>
+                            <span className="mt-1 inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-500/15 px-3 py-0.5 text-xs font-semibold text-emerald-200">
+                              Pago
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="py-8 text-center text-muted-foreground">Nenhum pagamento realizado</p>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                {isMediaLoading ? (
-                  <Loading message="Carregando mídias..." size="sm" className="py-8" />
-                ) : (
-                  <div className="space-y-6">
+            <TabsContent value="media" className="space-y-6 p-6">
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => setIsUploadDialogOpen(true)}
+                  className="rounded-full bg-[#7f5cf7] px-5 py-2 text-sm font-semibold text-white shadow-[0_18px_45px_-20px_rgba(127,92,247,0.65)] transition hover:bg-[#6d4ee3]"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload de Mídia
+                </Button>
+              </div>
+
+              {isMediaLoading ? (
+                <Loading message="Carregando mídias..." size="sm" className="py-8" />
+              ) : (
+                <Tabs defaultValue="logo" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 bg-background/50">
+                    <TabsTrigger value="logo" className="flex items-center gap-2">
+                      <ImageIcon className="h-4 w-4" />
+                      Logo
+                      <Badge variant="secondary" className="ml-1">{logo.length}</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="presskit" className="flex items-center gap-2">
+                      <Camera className="h-4 w-4" />
+                      Presskit
+                      <Badge variant="secondary" className="ml-1">{presskit.length}</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="backdrop" className="flex items-center gap-2">
+                      <Video className="h-4 w-4" />
+                      Backdrop
+                      <Badge variant="secondary" className="ml-1">{backdrop.length}</Badge>
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="logo" className="mt-6">
                     <Card className="glass-card">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <ImageIcon className="h-5 w-5" />
-                          Logos ({logo.length})
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
+                      <CardContent className="pt-6">
                         {logo.length > 0 ? (
                           renderImageGrid(logo, "grid gap-4 sm:grid-cols-2 lg:grid-cols-3")
                         ) : (
@@ -1325,31 +1338,23 @@ const DJsProfile = () => {
                         )}
                       </CardContent>
                     </Card>
+                  </TabsContent>
 
+                  <TabsContent value="presskit" className="mt-6">
                     <Card className="glass-card">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Camera className="h-5 w-5" />
-                          Press Kits ({presskit.length})
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
+                      <CardContent className="pt-6">
                         {presskit.length > 0 ? (
-                          renderDocumentList(presskit)
+                          renderImageGrid(presskit, "grid gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5")
                         ) : (
                           <p className="py-8 text-center text-muted-foreground">Nenhum press kit enviado</p>
                         )}
                       </CardContent>
                     </Card>
+                  </TabsContent>
 
+                  <TabsContent value="backdrop" className="mt-6">
                     <Card className="glass-card">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Video className="h-5 w-5" />
-                          Backdrops ({backdrop.length})
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
+                      <CardContent className="pt-6">
                         {backdrop.length > 0 ? (
                           renderImageGrid(backdrop, "grid gap-4 sm:grid-cols-2 lg:grid-cols-3")
                         ) : (
@@ -1357,44 +1362,50 @@ const DJsProfile = () => {
                         )}
                       </CardContent>
                     </Card>
+                  </TabsContent>
+                </Tabs>
+              )}
 
-                    <Card className="glass-card">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Headphones className="h-5 w-5" />
-                          Áudios ({audios.length})
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {audios.length > 0 ? (
-                          renderAudioList(audios)
-                        ) : (
-                          <p className="py-8 text-center text-muted-foreground">Nenhum áudio enviado</p>
-                        )}
-                      </CardContent>
-                    </Card>
+              {/* Seções de Áudios e Outros mantidas abaixo */}
+              {!isMediaLoading && (
+                <div className="space-y-6 mt-8">
+                  <Card className="glass-card">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Headphones className="h-5 w-5" />
+                        Áudios ({audios.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {audios.length > 0 ? (
+                        renderAudioList(audios)
+                      ) : (
+                        <p className="py-8 text-center text-muted-foreground">Nenhum áudio enviado</p>
+                      )}
+                    </CardContent>
+                  </Card>
 
-                    <Card className="glass-card">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Upload className="h-5 w-5" />
-                          Outros ({outros.length})
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {outros.length > 0 ? (
-                          renderOutrosList(outros)
-                        ) : (
-                          <p className="py-8 text-center text-muted-foreground">Nenhuma mídia adicional</p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+                  <Card className="glass-card">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Upload className="h-5 w-5" />
+                        Outros ({outros.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {outros.length > 0 ? (
+                        renderOutrosList(outros)
+                      ) : (
+                        <p className="py-8 text-center text-muted-foreground">Nenhuma mídia adicional</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
 
       <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
         <DialogContent className="max-w-3xl sm:max-h-[85vh]">
@@ -1435,9 +1446,11 @@ const DJsProfile = () => {
                 artist_name: (formData.get("artist_name")?.toString() ?? "").trim(),
                 real_name: toNullable(formData.get("real_name")),
                 email: toNullable(formData.get("email")),
+                phone: toNullable(formData.get("phone")),
                 whatsapp: toNullable(formData.get("whatsapp")),
                 location: toNullable(formData.get("location")),
                 pix_key: toNullable(formData.get("pix_key")),
+                bio: toNullable(formData.get("bio")),
                 genre: toNullable(formData.get("genre")),
                 base_price: Number.isFinite(basePriceVal) ? basePriceVal : null,
                 instagram_url: toNullable(formData.get("instagram_url")),
@@ -1445,7 +1458,6 @@ const DJsProfile = () => {
                 tiktok_url: toNullable(formData.get("tiktok_url")),
                 soundcloud_url: toNullable(formData.get("soundcloud_url")),
                 portifolio_url: toNullable(formData.get("portifolio_url")),
-                birth_date: toNullable(formData.get("birth_date")),
               };
               updateDJMutation.mutate(payload, { onSuccess: () => setIsEditDialogOpen(false) });
             }}
@@ -1466,11 +1478,9 @@ const DJsProfile = () => {
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" name="email" type="email" defaultValue={dj.email ?? ""} />
               </div>
-                 </div>
-            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="birth_date">Data de Nascimento</Label>
-                <Input id="birth_date" name="birth_date" type="date" defaultValue={formatDateForInput(dj.birth_date)} />
+                <Label htmlFor="phone">Telefone</Label>
+                <Input id="phone" name="phone" defaultValue={dj.phone ?? ""} />
               </div>
             </div>
             <div className="grid gap-4 md:grid-cols-2">

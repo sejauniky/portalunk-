@@ -136,7 +136,9 @@ export const ContractViewModal = ({
                   const minimal = {
                     event_id: eventId,
                     dj_id: djId,
-                    contract_content: (evInfo as any)?.contract_content || "",
+                    producer_id: ownerProducerId,
+                    template_id: contractType,
+                    contract_content: (evInfo as any)?.contract_content || contractContent || "",
                     contract_value: (evInfo as any)?.cache_value || 0,
                     signature_status: 'pending',
                   } as any;

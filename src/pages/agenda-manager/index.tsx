@@ -467,13 +467,13 @@ const PersonalAgendaSection = ({
                 </div>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-7 text-xs font-semibold text-muted-foreground">
+            <CardContent className="overflow-x-auto">
+              <div className="grid grid-cols-7 min-w-[700px] text-xs font-semibold text-muted-foreground">
                 {['SEG','TER','QUA','QUI','SEX','SAB','DOM'].map((d) => (
                   <div key={d} className="border border-border/60 p-2 text-center bg-muted/30">{d}</div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 border-l border-b border-border/60">
+              <div className="grid grid-cols-7 min-w-[700px] border-l border-b border-border/60">
                 {buildMonthGrid.map((cell, idx) => {
                   const dayItems = getItemsFor(cell.date);
                   const isSelected = isSameDay(cell.date, selectedDate);
@@ -483,7 +483,7 @@ const PersonalAgendaSection = ({
                       type="button"
                       onClick={() => { setSelectedDate(cell.date); }}
                       className={cn(
-                        "relative h-28 w-full border-t border-r border-border/60 p-2 text-left overflow-hidden",
+                        "relative h-24 sm:h-28 w-full border-t border-r border-border/60 p-2 text-left overflow-hidden",
                         !cell.inCurrent && "bg-muted/20 text-muted-foreground",
                         isSelected && "ring-2 ring-primary z-10"
                       )}
@@ -1113,7 +1113,7 @@ const DjAgendaSection = ({
       <div>
         <h2 className="text-xl font-semibold">Agenda dos DJs</h2>
         <p className="text-sm text-muted-foreground">
-          Visualize a agenda e conteúdo programado de cada DJ.
+          Visualize a agenda e conte��do programado de cada DJ.
         </p>
       </div>
 
@@ -1375,7 +1375,7 @@ const AgendaManager = () => {
   };
   
   return (
-    <div className="p-8 space-y-8 min-h-screen">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 min-h-screen">
       <BreadcrumbTrail />
       
       <header className="flex flex-col gap-2">
@@ -1389,7 +1389,7 @@ const AgendaManager = () => {
       </header>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 max-w-3xl">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 max-w-3xl">
           <TabsTrigger value="personal" className="gap-2">
             <CalendarRange className="h-4 w-4" /> Agenda Pessoal
           </TabsTrigger>

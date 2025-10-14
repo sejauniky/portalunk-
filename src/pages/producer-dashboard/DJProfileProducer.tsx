@@ -668,7 +668,7 @@ const DJProfileProducer = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border sticky top-0 bg-background/80 backdrop-blur-lg z-10">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 sm:px-6 py-4">
           <Button variant="ghost" onClick={handleGoBack} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             Voltar ao Dashboard
@@ -712,7 +712,7 @@ const DJProfileProducer = () => {
         ) : null}
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />
 
-        <div className="container relative mx-auto px-6 py-12">
+        <div className="container relative mx-auto px-4 sm:px-6 py-8 sm:py-12">
           {profileBackdropImage && (
             <div className="absolute inset-0 rounded-[32px] mx-6 overflow-hidden opacity-50">
               {isHeroVideo ? (
@@ -750,7 +750,7 @@ const DJProfileProducer = () => {
         </div>
       </section>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "eventos" | "financeiro" | "midias")}> 
           <TabsList className="grid w-full grid-cols-3 gap-3 mb-8">
           <TabsTrigger

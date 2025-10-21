@@ -11,9 +11,10 @@ const PendingPaymentsManager = ({ onPaymentUpdate, producerId: producerIdProp = 
   const getEventDJNames = (event) => {
     if (!event) return [];
     const extras = Array.isArray(event?.event_djs)
-      ? event.event_djs.map(ed => ed?.dj?.name).filter(Boolean)
+      ? event.event_djs.map(ed => ed?.dj?.artist_name || ed?.dj?.name || ed?.dj?.real_name).filter(Boolean)
       : [];
-    const all = [event?.dj?.name, ...extras].filter(Boolean);
+    const head = event?.dj?.artist_name || event?.dj?.name || event?.dj?.real_name;
+    const all = [head, ...extras].filter(Boolean);
     return all;
   };
   const { userProfile } = useAuth();

@@ -1,3 +1,5 @@
+'use client';
+
 import { useMemo } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { Tables } from "@/integrations/supabase/types";

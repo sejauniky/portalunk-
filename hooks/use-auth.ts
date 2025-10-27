@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';

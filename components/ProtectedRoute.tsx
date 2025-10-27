@@ -1,6 +1,5 @@
 import React from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import NotFound from '@/pages/NotFound';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -24,6 +23,22 @@ function UnauthorizedMessage() {
   );
 }
 
+function NotFoundPage() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-background">
+      <div className="text-center space-y-6">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold">404</h1>
+          <h2 className="text-2xl font-semibold text-muted-foreground">Não encontrado</h2>
+        </div>
+        <p className="text-muted-foreground max-w-md">
+          A página que você está procurando não existe.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function ProtectedRoute({ children, requiredRole = 'admin' }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
 
@@ -32,7 +47,7 @@ export function ProtectedRoute({ children, requiredRole = 'admin' }: ProtectedRo
   }
 
   if (!isAuthenticated || !user) {
-    return <NotFound />;
+    return <NotFoundPage />;
   }
 
   if (!user.role || user.role !== requiredRole) {

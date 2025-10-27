@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
-import { QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -8,7 +7,7 @@ import { PWAInstallPrompt } from "@/components/ui/PWAInstallPrompt";
 import { RootLayoutClient } from "./layout.client";
 import { GlobalProviders } from "./providers";
 import "@/index.css";
-import { getQueryClient } from "@/lib/get-query-client";
+import { QueryClientProviderWrapper } from "./query-client-provider";
 
 export const metadata: Metadata = {
   title: "Portal UNK - Assessoria Musical Profissional",
@@ -37,7 +36,6 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
-  themeColor: "#0A0B0E",
   openGraph: {
     type: "website",
     locale: "pt_BR",
@@ -50,9 +48,8 @@ export const viewport = {
   maximumScale: 1,
   userScalable: false,
   colorScheme: "dark",
+  themeColor: "#0A0B0E",
 };
-
-const queryClient = getQueryClient();
 
 export default function RootLayout({
   children,
@@ -72,14 +69,14 @@ export default function RootLayout({
       <body>
         <GlobalProviders>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <QueryClientProvider client={queryClient}>
+            <QueryClientProviderWrapper>
               <TooltipProvider>
                 <Toaster />
                 <Sonner />
                 <PWAInstallPrompt />
                 <RootLayoutClient>{children}</RootLayoutClient>
               </TooltipProvider>
-            </QueryClientProvider>
+            </QueryClientProviderWrapper>
           </ThemeProvider>
         </GlobalProviders>
       </body>

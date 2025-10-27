@@ -1,5 +1,7 @@
-import ProducerManagement from "@/pages/producer-management";
+'use client';
+
+import { redirect } from 'next/navigation';
 
 export default function ProducersPage() {
-  return <ProducerManagement />;
+  redirect('/producer-management');
 }

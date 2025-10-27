@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";

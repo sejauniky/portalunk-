@@ -1,6 +1,8 @@
+'use client';
+
 import React from 'react';
 import { useLocation } from '@/hooks/use-location';
-import { Icon } from '../../../components/Icon';
+import { Icon } from '@/components/Icon';
 
 const quickActionItems = [
   {

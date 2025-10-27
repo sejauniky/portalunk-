@@ -1,5 +1,7 @@
-import DJManagement from "@/pages/dj-management";
+'use client';
+
+import { redirect } from 'next/navigation';
 
 export default function DJsPage() {
-  return <DJManagement />;
+  redirect('/dj-management');
 }

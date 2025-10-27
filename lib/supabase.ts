@@ -1,3 +1,5 @@
+'use client';
+
 import { supabase as supabaseClient } from '@/integrations/supabase/client';
 
 const SUPABASE_URL = "https://fxkhkcvnmvqqjzgsdoec.supabase.co";

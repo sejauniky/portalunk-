@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { paymentService, storageService } from "@/services/supabaseService";

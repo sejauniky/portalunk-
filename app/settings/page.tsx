@@ -1,5 +1,7 @@
-import CompanySettings from "@/pages/admin-dashboard/CompanySettings";
+'use client';
+
+import { redirect } from 'next/navigation';
 
 export default function SettingsPage() {
-  return <CompanySettings />;
+  redirect('/company-settings');
 }

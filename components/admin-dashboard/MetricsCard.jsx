@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { Icon } from '../../../components/Icon';
+import { Icon } from '@/components/Icon';
 
 const MetricsCard = ({ title, value, change, changeType, icon, color = 'primary', onClick, clickable = false, valueStyle }) => {
   const getIconColor = (colorType) => {

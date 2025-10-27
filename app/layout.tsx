@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { PWAInstallPrompt } from "@/components/ui/PWAInstallPrompt";
 import { RootLayoutClient } from "./layout.client";
+import { GlobalProviders } from "./providers";
 import "@/src/index.css";
 import { getQueryClient } from "@/lib/get-query-client";
 
@@ -69,16 +70,18 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <PWAInstallPrompt />
-              <RootLayoutClient>{children}</RootLayoutClient>
-            </TooltipProvider>
-          </QueryClientProvider>
-        </ThemeProvider>
+        <GlobalProviders>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <QueryClientProvider client={queryClient}>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <PWAInstallPrompt />
+                <RootLayoutClient>{children}</RootLayoutClient>
+              </TooltipProvider>
+            </QueryClientProvider>
+          </ThemeProvider>
+        </GlobalProviders>
       </body>
     </html>
   );

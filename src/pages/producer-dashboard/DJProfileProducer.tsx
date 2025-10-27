@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation, useRoute } from "wouter";
+import { useLocation } from "@/hooks/use-location";
+import { useParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,8 +74,8 @@ interface Event {
 }
 
 const DJProfileProducer = () => {
-  const [, params] = useRoute<{ djId: string }>("/dj-profile/:djId");
-  const djId = params?.djId ?? null;
+  const routeParams = useParams();
+  const djId = (routeParams?.djId as string) ?? null;
   const [, setLocation] = useLocation();
   const { userProfile } = useAuth();
   const producerId = userProfile?.id;

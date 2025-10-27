@@ -40,6 +40,20 @@ const suppressRejection = (event: PromiseRejectionEvent) => {
 
 export function GlobalProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => {
+    // Handle RSC payload fetch errors
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      try {
+        return await originalFetch(...args);
+      } catch (error) {
+        const url = typeof args[0] === 'string' ? args[0] : args[0]?.url;
+        if (url && typeof url === 'string' && (url.includes('_next/rsc') || url.includes('_rsc'))) {
+          console.warn('[RSC Fetch Error]', { url, error });
+        }
+        throw error;
+      }
+    };
+
     // Add error listeners
     window.addEventListener("error", suppressError);
     window.addEventListener("unhandledrejection", suppressRejection);

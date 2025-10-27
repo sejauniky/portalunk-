@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { PWAInstallPrompt } from "@/components/ui/PWAInstallPrompt";
 import { RootLayoutClient } from "./layout.client";
-import "@/index.css";
+import "@/src/index.css";
 import { getQueryClient } from "@/lib/get-query-client";
 
 export const metadata: Metadata = {

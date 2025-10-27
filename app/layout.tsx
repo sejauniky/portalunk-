@@ -37,7 +37,6 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
-  themeColor: "#0A0B0E",
   openGraph: {
     type: "website",
     locale: "pt_BR",
@@ -50,6 +49,7 @@ export const viewport = {
   maximumScale: 1,
   userScalable: false,
   colorScheme: "dark",
+  themeColor: "#0A0B0E",
 };
 
 const queryClient = getQueryClient();

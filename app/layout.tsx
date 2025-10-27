@@ -7,7 +7,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { PWAInstallPrompt } from "@/components/ui/PWAInstallPrompt";
 import { RootLayoutClient } from "./layout.client";
 import { GlobalProviders } from "./providers";
-import "@/src/index.css";
+import "@/index.css";
 import { getQueryClient } from "@/lib/get-query-client";
 
 export const metadata: Metadata = {

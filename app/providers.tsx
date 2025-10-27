@@ -79,6 +79,7 @@ export function GlobalProviders({ children }: { children: React.ReactNode }) {
     return () => {
       window.removeEventListener("error", suppressError);
       window.removeEventListener("unhandledrejection", suppressRejection);
+      window.fetch = originalFetch;
     };
   }, []);
 

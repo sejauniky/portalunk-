@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useRoute } from 'wouter';
+import { useParams } from 'next/navigation';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/button';
 import { storageService } from '../../services/supabaseService';
@@ -15,8 +15,8 @@ const sha256 = async (text) => {
 };
 
 const SharedMedia = () => {
-  const [, params] = useRoute('/share/:token');
-  const token = params?.token;
+  const params = useParams();
+  const token = params?.shareId;
   const [meta, setMeta] = useState(null);
   const [pass, setPass] = useState('');
   const [authorized, setAuthorized] = useState(false);

@@ -8,13 +8,17 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 let supabaseInstance: ReturnType<typeof createClient<Database>> | null = null;
 
-export const supabase = (() => {
-  // Only create once and only in the browser
+function createSupabaseClient() {
   if (typeof window === 'undefined') {
     // Return a dummy object for server-side that won't be used
     return {
-      auth: { getSession: async () => ({ data: { session: null } }) },
-      from: () => ({ select: () => ({}) }),
+      auth: { 
+        getSession: async () => ({ data: { session: null } }),
+        onAuthStateChange: () => ({ data: { subscription: null } }),
+      },
+      from: () => ({ 
+        select: () => ({ eq: () => ({ single: async () => ({ data: null }) }) }) 
+      }),
     } as any;
   }
 
@@ -29,4 +33,12 @@ export const supabase = (() => {
   }
 
   return supabaseInstance;
-})();
+}
+
+// Lazy export - the function won't execute until the module is actually used
+export const supabase = new Proxy({}, {
+  get: (_target, prop) => {
+    const client = createSupabaseClient();
+    return Reflect.get(client, prop);
+  }
+}) as ReturnType<typeof createClient<Database>>;

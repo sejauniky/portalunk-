@@ -1,4 +1,5 @@
-import { useLocation, useRoute } from "wouter";
+import { useLocation } from "@/hooks/use-location";
+import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Loading } from "@/components/ui/loading";
@@ -244,8 +245,8 @@ const MetricCard = ({ title, value, description, icon: Icon, className, accent =
 const commissionRate = 15;
 
 const DJsProfile = () => {
-  const [, params] = useRoute("/dj-profile/:djId");
-  const djId = (params as { djId?: string })?.djId ?? null;
+  const routeParams = useParams();
+  const djId = (routeParams?.djId as string) ?? null;
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
 

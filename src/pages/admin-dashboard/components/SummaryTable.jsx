@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation } from 'wouter';
+import { useLocation } from '@/hooks/use-location';
 import { Icon } from '../../../components/Icon';
 
 const quickActionItems = [

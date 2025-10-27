@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useRef } from 'react';
 import { Icon } from '../../../components/Icon';
 import Button from '../../../components/ui/button';

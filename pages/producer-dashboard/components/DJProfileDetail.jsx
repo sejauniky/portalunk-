@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, Edit, Calendar as CalendarIcon, DollarSign, Image as ImageIcon, User, FileText, List } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';

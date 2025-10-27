@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react'
 import { X, FileText, DollarSign, Calendar, User, Building, Download, Send, Save } from 'lucide-react'
 

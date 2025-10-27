@@ -1,5 +1,8 @@
+"use client";
+
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -42,7 +45,8 @@ const producerNavItems = [
 export function Sidebar({ className }: SidebarProps) {
   const { user, logout } = useAuth();
   const { toast } = useToast();
-  const [location, setLocation] = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -59,7 +63,7 @@ export function Sidebar({ className }: SidebarProps) {
         title: "Sessão encerrada",
         description: "Você saiu do portal com sucesso.",
       });
-      setLocation("/login");
+      router.push("/login");
     } catch (error: unknown) {
       console.error('Logout failed:', error);
       toast({
@@ -168,8 +172,8 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {navItems.map((item, index) => {
-          const isActive = location === item.href || 
-            (item.href !== '/' && location.startsWith(item.href));
+          const isActive = pathname === item.href || 
+            (item.href !== '/' && pathname.startsWith(item.href));
           
           return (
             <Link key={item.href} href={item.href}>

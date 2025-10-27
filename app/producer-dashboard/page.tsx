@@ -1,4 +1,4 @@
-import ProducerDashboard from "@/src/pages/producer-dashboard";
+import ProducerDashboard from "@/pages/producer-dashboard";
 
 export default function ProducerDashboardPage() {
   return <ProducerDashboard />;

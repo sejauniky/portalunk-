@@ -99,7 +99,7 @@ const updateEventColumnCache = (columns: Set<string>) => {
   cachedEventColumns = new Set(columns);
 };
 
-// Utilities (moved to src/lib/eventUtils.ts)
+// Utilities (in lib/eventUtils.ts)
 
 const extractUndefinedColumn = (error: any): string | null => {
   if (!error || typeof error !== 'object') {
@@ -128,7 +128,7 @@ const extractUndefinedColumn = (error: any): string | null => {
   return typeof (error as { column?: string }).column === 'string' ? (error as { column?: string }).column! : null;
 };
 
-// ...existing code uses helpers from src/lib/eventUtils.ts
+// ...existing code uses helpers from lib/eventUtils.ts
 
 const buildEventRecord = (payload: EventPayload, primaryDjId: string | null): Partial<EventRow> => {
   const eventName = pickFirstString(payload.event_name, payload.title, payload.name);

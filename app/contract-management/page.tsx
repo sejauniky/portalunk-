@@ -1,4 +1,4 @@
-import ContractManagement from "@/src/pages/contract-management";
+import ContractManagement from "@/pages/contract-management";
 
 export default function ContractManagementPage() {
   return <ContractManagement />;

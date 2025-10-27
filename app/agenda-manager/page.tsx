@@ -1,4 +1,4 @@
-import AgendaManager from "@/src/pages/agenda-manager";
+import AgendaManager from "@/pages/agenda-manager";
 
 export default function AgendaManagerPage() {
   return <AgendaManager />;

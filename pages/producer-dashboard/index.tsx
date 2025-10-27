@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FC } from "react";
-import { Link, useLocation } from "wouter";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, FileText } from "lucide-react";
@@ -45,7 +46,7 @@ const ProducerDashboard: FC = () => {
   const [loadingContracts, setLoadingContracts] = useState(true);
   const [producerRecord, setProducerRecord] = useState<ProducerRecord | null>(null);
   const { userProfile, logout } = useAuth();
-  const [, setLocation] = useLocation();
+  const router = useRouter();
 
   const profile = userProfile;
 
@@ -245,9 +246,9 @@ const ProducerDashboard: FC = () => {
         error instanceof Error ? error.message : JSON.stringify(error, Object.getOwnPropertyNames(error)) ?? error,
       );
     } finally {
-      setLocation("/login");
+      router.push("/login");
     }
-  }, [logout, setLocation]);
+  }, [logout, router]);
 
   if (loading) {
     return (

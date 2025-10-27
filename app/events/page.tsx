@@ -1,5 +1,7 @@
-import EventCalendar from "@/pages/event-calendar";
+'use client';
+
+import { redirect } from 'next/navigation';
 
 export default function EventsPage() {
-  return <EventCalendar />;
+  redirect('/event-calendar');
 }

@@ -1,12 +1,9 @@
 import { useEffect } from "react";
-import { useLocation } from "wouter";
 
 const NotFound = () => {
-  const [location] = useLocation();
-
   useEffect(() => {
-    console.error("404 Error: User attempted to access non-existent route:", location);
-  }, [location]);
+    console.error("404 Error: User attempted to access non-existent route");
+  }, []);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">

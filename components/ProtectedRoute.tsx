@@ -1,11 +1,9 @@
 import React from 'react';
-import { Route, useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
 import NotFound from '@/pages/NotFound';
 
 interface ProtectedRouteProps {
-  path: string;
-  component: React.ComponentType<any>;
+  children: React.ReactNode;
   requiredRole?: 'admin' | 'producer';
 }
 
@@ -26,28 +24,20 @@ function UnauthorizedMessage() {
   );
 }
 
-export function ProtectedRoute({ path, component: Component, requiredRole = 'admin' }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, requiredRole = 'admin' }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
-  const [, setLocation] = useLocation();
 
-  // Show a lightweight loading placeholder while the auth state initializes
   if (isLoading) {
-    return <Route path={path} component={LoadingPlaceholder} />;
+    return <LoadingPlaceholder />;
   }
 
-  // If not authenticated, redirect to /login
   if (!isAuthenticated || !user) {
-    // Use setLocation to navigate programmatically; return null while navigation happens
-    setLocation('/login');
-    return null;
+    return <NotFound />;
   }
 
-  // If authenticated but missing required role, render NotFound with message or an Unauthorized block
   if (!user.role || user.role !== requiredRole) {
-    // prefer showing a clear Unauthorized message; fallback to NotFound for consistency when needed
-    return <Route path={path} component={UnauthorizedMessage} />;
+    return <UnauthorizedMessage />;
   }
 
-  // Happy path: render the protected component
-  return <Route path={path} component={Component} />;
+  return <>{children}</>;
 }

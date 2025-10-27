@@ -1,5 +1,7 @@
-import ContractManagement from "@/pages/contract-management";
+'use client';
+
+import { redirect } from 'next/navigation';
 
 export default function ContractsPage() {
-  return <ContractManagement />;
+  redirect('/contract-management');
 }

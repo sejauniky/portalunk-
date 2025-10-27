@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation } from '@/hooks/use-location';
-import TopBar from '@/components/ui/TopBar';
 import MetricsCard from '@/components/admin-dashboard/MetricsCard';
 import SummaryTable from '@/components/admin-dashboard/SummaryTable';
 import PaymentReviews from '@/components/admin-dashboard/PaymentReviews';

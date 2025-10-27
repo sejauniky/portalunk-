@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation } from '@/hooks/use-location';
 import BreadcrumbTrail from '../../components/ui/BreadcrumbTrail';

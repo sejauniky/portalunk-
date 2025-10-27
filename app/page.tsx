@@ -1,4 +1,4 @@
-import AdminDashboard from "@/src/pages/admin-dashboard";
+import AdminDashboard from "@/pages/admin-dashboard";
 
 export default function Home() {
   return <AdminDashboard />;

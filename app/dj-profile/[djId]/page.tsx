@@ -1,4 +1,4 @@
-import DJProfile from "@/src/pages/dj-profile";
+import DJProfile from "@/pages/dj-profile";
 
 export default function DJProfilePage() {
   return <DJProfile />;

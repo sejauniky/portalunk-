@@ -1,4 +1,4 @@
-import DJManagement from "@/src/pages/dj-management";
+import DJManagement from "@/pages/dj-management";
 
 export default function DJsPage() {
   return <DJManagement />;

@@ -1,4 +1,4 @@
-import DJProfileProducer from "@/src/pages/producer-dashboard/DJProfileProducer";
+import DJProfileProducer from "@/pages/producer-dashboard/DJProfileProducer";
 
 export default function DJProfileProducerPage() {
   return <DJProfileProducer />;

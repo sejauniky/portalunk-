@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation } from '@/hooks/use-location';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Eye, EyeOff, Lock, Mail, Play, SkipBack, SkipForward } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
@@ -31,7 +31,7 @@ const Login = () => {
   const trackProgressRef = useRef<number>(trackProgress);
   const roleRef = useRef<typeof role>(role);
 
-  const appLogo = import.meta.env?.VITE_APP_LOGO || '/logo.png';
+  const appLogo = process.env.NEXT_PUBLIC_APP_LOGO || '/logo.png';
 
   useEffect(() => {
     trackProgressRef.current = trackProgress;

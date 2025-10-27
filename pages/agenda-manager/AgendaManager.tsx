@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useMemo } from 'react';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import { eventService, producerService } from '../../services/supabaseService';

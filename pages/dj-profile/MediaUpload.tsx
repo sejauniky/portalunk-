@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent } from "react";
 import { Check, FileText, Image as ImageIcon, Trash2, Upload, Video, X, Link as LinkIcon } from "lucide-react";

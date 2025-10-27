@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "@/hooks/use-location";
 import { useParams } from "next/navigation";

@@ -120,24 +120,49 @@ export function useAuth() {
   useEffect(() => {
     isMounted.current = true;
 
-    // Safely attempt to get existing session; catch network errors
+    // Safely attempt to get existing session with timeout; catch network errors
     (async () => {
       try {
-        const { data } = await supabase.auth.getSession();
-        hydrateFromSessionUser(data?.session?.user ?? null);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        try {
+          const { data } = await supabase.auth.getSession();
+          clearTimeout(timeoutId);
+          hydrateFromSessionUser(data?.session?.user ?? null);
+        } catch (timeoutErr) {
+          clearTimeout(timeoutId);
+          if ((timeoutErr as Error)?.name === 'AbortError') {
+            console.warn('[useAuth] getSession timeout');
+            setSupabaseReachable(false);
+          }
+          throw timeoutErr;
+        }
       } catch (err) {
         console.error('[useAuth] getSession failed:', err);
-        if (err && String(err).toLowerCase().includes('failed to fetch')) setSupabaseReachable(false);
+        if (err && String(err).toLowerCase().includes('failed to fetch')) {
+          setSupabaseReachable(false);
+        }
+        if (isMounted.current) {
+          setIsLoading(false);
+          setProfileLoading(false);
+        }
       }
     })();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      hydrateFromSessionUser(session?.user ?? null);
-    });
+    let subscription: any = null;
+    try {
+      const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+        hydrateFromSessionUser(session?.user ?? null);
+      });
+      subscription = listener;
+    } catch (err) {
+      console.error('[useAuth] onAuthStateChange setup failed:', err);
+    }
 
     return () => {
       isMounted.current = false;
-      listener?.subscription?.unsubscribe();
+      subscription?.subscription?.unsubscribe();
     };
   }, [hydrateFromSessionUser]);
 

@@ -10,33 +10,54 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  const navigateWithRetry = (path: string, maxRetries = 3) => {
+    let attempt = 0;
+
+    const tryNavigate = () => {
+      try {
+        router.push(path);
+        attempt = 0;
+      } catch (error) {
+        if (attempt < maxRetries) {
+          attempt++;
+          console.warn(`Navigation failed, retrying (${attempt}/${maxRetries}):`, error);
+          setTimeout(tryNavigate, 500);
+        } else {
+          console.error('Navigation failed after retries:', error);
+        }
+      }
+    };
+
+    tryNavigate();
+  };
+
   useEffect(() => {
     try {
       if (!isAuthenticated && pathname !== "/login" && !pathname.startsWith("/share/")) {
-        router.push("/login");
+        navigateWithRetry("/login");
         return;
       }
 
       if (isAuthenticated && pathname === "/login") {
         if (role === "producer") {
-          router.push("/producer-dashboard");
+          navigateWithRetry("/producer-dashboard");
         } else if (role === "admin") {
-          router.push("/");
+          navigateWithRetry("/");
         }
         return;
       }
 
       if (isAuthenticated && role === "admin" && pathname === "/producer-dashboard") {
-        router.push("/");
+        navigateWithRetry("/");
         return;
       }
 
       if (isAuthenticated && role === "producer" && pathname === "/" && !pathname.startsWith("/share/")) {
-        router.push("/producer-dashboard");
+        navigateWithRetry("/producer-dashboard");
         return;
       }
     } catch (error) {
-      console.error('Navigation error:', error);
+      console.error('Navigation setup error:', error);
     }
   }, [isAuthenticated, role, pathname, router]);
 

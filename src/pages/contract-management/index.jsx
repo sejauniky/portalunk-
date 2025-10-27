@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation } from '@/hooks/use-location';
 import BreadcrumbTrail from '../../components/ui/BreadcrumbTrail';
 import ContractTable from './components/ContractTable';
 import ContractFilters from './components/ContractFilters';

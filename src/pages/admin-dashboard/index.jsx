@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation } from '@/hooks/use-location';
 import TopBar from '../../components/ui/TopBar';
 import MetricsCard from './components/MetricsCard';
 import SummaryTable from './components/SummaryTable';

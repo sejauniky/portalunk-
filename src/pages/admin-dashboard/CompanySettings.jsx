@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation } from '@/hooks/use-location';
 import { toast } from 'react-hot-toast';
 import { Icon } from '../../components/Icon';
 import { Button } from '../../components/ui/button';

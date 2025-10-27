@@ -11,28 +11,32 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isAuthenticated && pathname !== "/login" && !pathname.startsWith("/share/")) {
-      router.push("/login");
-      return;
-    }
-
-    if (isAuthenticated && pathname === "/login") {
-      if (role === "producer") {
-        router.push("/producer-dashboard");
-      } else if (role === "admin") {
-        router.push("/");
+    try {
+      if (!isAuthenticated && pathname !== "/login" && !pathname.startsWith("/share/")) {
+        router.push("/login");
+        return;
       }
-      return;
-    }
 
-    if (isAuthenticated && role === "admin" && pathname === "/producer-dashboard") {
-      router.push("/");
-      return;
-    }
+      if (isAuthenticated && pathname === "/login") {
+        if (role === "producer") {
+          router.push("/producer-dashboard");
+        } else if (role === "admin") {
+          router.push("/");
+        }
+        return;
+      }
 
-    if (isAuthenticated && role === "producer" && pathname === "/" && !pathname.startsWith("/share/")) {
-      router.push("/producer-dashboard");
-      return;
+      if (isAuthenticated && role === "admin" && pathname === "/producer-dashboard") {
+        router.push("/");
+        return;
+      }
+
+      if (isAuthenticated && role === "producer" && pathname === "/" && !pathname.startsWith("/share/")) {
+        router.push("/producer-dashboard");
+        return;
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
     }
   }, [isAuthenticated, role, pathname, router]);
 

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from '@jest/globals';
 import { parseNumericValue, roundCurrencyValue, normalizeTimestamp, pickFirstString, normalizeDjIds, mergeDjIds } from '../eventUtils';
 
 describe('eventUtils', () => {

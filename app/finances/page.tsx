@@ -1,5 +1,7 @@
-import FinancialTracking from "@/pages/financial-tracking";
+'use client';
+
+import { redirect } from 'next/navigation';
 
 export default function FinancesPage() {
-  return <FinancialTracking />;
+  redirect('/financial-tracking');
 }

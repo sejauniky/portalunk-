@@ -66,8 +66,8 @@ const CATEGORY_BUCKET_MAP: Record<string, string> = {
   other: 'dj-presskit'
 };
 
-const SUPABASE_BASE_URL = ((import.meta.env?.VITE_SUPABASE_URL ?? SUPABASE_URL) || '').replace(/\/$/, '');
-const SUPABASE_ANON_KEY = ((import.meta.env?.VITE_SUPABASE_ANON_KEY ?? SUPABASE_PUBLISHABLE_KEY) || '').trim();
+const SUPABASE_BASE_URL = ((process.env.NEXT_PUBLIC_SUPABASE_URL ?? SUPABASE_URL) || '').replace(/\/$/, '');
+const SUPABASE_ANON_KEY = ((process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? SUPABASE_PUBLISHABLE_KEY) || '').trim();
 
 function randomId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {

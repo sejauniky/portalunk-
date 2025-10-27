@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useLocation } from '@/hooks/use-location';
 import { AnimatePresence, motion } from 'framer-motion';
